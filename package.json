@@ -6,7 +6,10 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "repository": "https://github.com/drawdyio/drawdy-driver-protocol",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/drawdyio/drawdy-driver-protocol.git"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
