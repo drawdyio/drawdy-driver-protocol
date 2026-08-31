@@ -1,0 +1,45 @@
+---
+title: "Introduction"
+description: "The Drawdy Driver Protocol and how extensions drive the Drawdy canvas."
+---
+
+The **Drawdy Driver Protocol** is the contract between a Drawdy extension — a *driver* — and the Drawdy application that hosts it. A driver is a small JavaScript bundle that runs inside a sandboxed host worker and drives the canvas: it places elements, moves the camera, adds menus and panels, opens webviews, and reacts to what the user does.
+
+This site documents that contract:
+
+- **[Quickstart](/quickstart)** — build and run your first driver in a few minutes.
+- **[Protocol Reference](/protocol)** — every command, subscription, and data type.
+
+## The model
+
+A driver never touches the Drawdy scene directly. It exchanges typed messages with the host over two channels:
+
+- **Commands** — a request/response call from the driver to Drawdy. You ask Drawdy to do something (add elements, move the camera, read the selection) and await the result.
+- **Subscriptions** — a long-lived registration. You issue a subscription command once; Drawdy then pushes **events** to your driver whenever the thing you subscribed to happens.
+
+Both channels flow through the same envelope. A subscription is just a command whose response hands back a `subscriptionId`.
+
+## Two guarantees
+
+1. **Every request has a response.** Unlike LSP notifications, every command you issue resolves — with a value or an error — so the driver always knows whether Drawdy processed it. See [*LSP could have been better*](https://matklad.github.io/2023/10/12/lsp-could-have-been-better.html) for the reasoning.
+2. **Requests are processed in order.** Commands sent to Drawdy are handled in the order they are received.
+
+## What a driver looks like
+
+A driver is a module that exports two functions:
+
+```ts
+import type { DriverModule } from "@drawdy/driver-protocol";
+
+export const activate: DriverModule["activate"] = async (ctx) => {
+    // register menus, panels, subscriptions; issue commands via ctx.issueCommand
+};
+
+export const onEvent: DriverModule["onEvent"] = async (event) => {
+    // react to subscription events
+};
+```
+
+It is packaged as a **`.drawdyx`** file — a zip containing a `manifest.json` and the entry bundle (`main.js`, a single CommonJS file). Drawdy loads the bundle, calls `activate`, and delivers subscription events to `onEvent`.
+
+Head to the **[Quickstart](/quickstart)** to build one.

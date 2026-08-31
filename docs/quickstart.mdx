@@ -1,0 +1,156 @@
+---
+title: "Quickstart"
+description: "Build, run, and package your first Drawdy driver."
+---
+
+This walks through building a driver from the starter template, running it against Drawdy in development, and packaging it for distribution.
+
+## 1. Get the starter
+
+The fastest path is to clone the **extension starter**, a Vite project wired for the whole build:
+
+```bash
+git clone https://github.com/drawdyio/drawdy-extension-starter my-extension
+cd my-extension
+npm install
+```
+
+The starter already depends on the protocol package for its types:
+
+```bash
+npm install --save-dev @drawdy/driver-protocol
+```
+
+The protocol package is **types only** — it ships no runtime code. You import types from it and nothing lands in your bundle.
+
+## 2. Write the module
+
+A driver exports `activate` and `onEvent`. Here is a complete extension that adds a context-menu item, and each time it is clicked drops a sticky note on the canvas and flies the camera to it:
+
+```ts
+import type { DriverCommandIssuer, DriverModule } from "@drawdy/driver-protocol";
+
+const MENU_ID = "starter:add-note";
+
+let issue: DriverCommandIssuer;
+let generateId: () => string;
+let driverId: string;
+let requestSeq = 0;
+let placed = 0;
+
+const nextRequestId = () => String(requestSeq++);
+
+export const activate: DriverModule["activate"] = async (ctx) => {
+    issue = ctx.issueCommand;
+    generateId = ctx.generateId;
+    driverId = ctx.manifest.driverId;
+
+    await issue({
+        type: "command:context-menu:add",
+        driverId,
+        requestId: nextRequestId(),
+        req: { menuId: MENU_ID, menuTitle: "Add sticky note" },
+    });
+
+    await issue({
+        type: "subscription:context-menu:clicked",
+        driverId,
+        requestId: nextRequestId(),
+        req: { menuId: MENU_ID },
+    });
+};
+
+export const onEvent: DriverModule["onEvent"] = async (event) => {
+    if (
+        event.type !== "subscription:context-menu:clicked" ||
+        event.body.menuId !== MENU_ID
+    ) {
+        return;
+    }
+
+    const offset = placed++ * 28;
+    const noteId = generateId();
+
+    await issue({
+        type: "command:scene:add-drawdy-elements",
+        driverId,
+        requestId: nextRequestId(),
+        req: {
+            elements: [
+                {
+                    type: "text",
+                    drawdyElementId: noteId,
+                    x: 160 + offset,
+                    y: 160 + offset,
+                    text: "Hello from my extension",
+                    fontSize: 24,
+                    color: "#f59e0b",
+                },
+            ],
+        },
+    });
+
+    await issue({
+        type: "command:camera:fly-to-elements",
+        driverId,
+        requestId: nextRequestId(),
+        req: { drawdyElementIds: [noteId], flyDurationMs: 400, zoom: 1 },
+    });
+};
+```
+
+A few things to notice:
+
+- **`issueCommand`** is how you talk to Drawdy. Every call takes `{ type, driverId, requestId, req }` and resolves to a response. `driverId` comes from your manifest; `requestId` is any value unique within your driver.
+- **Subscriptions are set up by issuing a command.** `subscription:context-menu:clicked` registers interest; the matching events then arrive in `onEvent`.
+- **`generateId`** mints ids for the canvas elements you create.
+
+See the full command and event catalogue in the **[Protocol Reference](/protocol)**.
+
+## 3. The manifest
+
+Every extension declares a `manifest.json`:
+
+```json
+{
+    "driverId": "drawdy.my-extension",
+    "driverName": "My Extension",
+    "driverVersion": "0.1.0",
+    "apiVersion": "1",
+    "description": "A Drawdy extension.",
+    "main": "main.js"
+}
+```
+
+`main` is the entry bundle inside the `.drawdyx` zip. `driverId` is the stable identity Drawdy uses for install, storage, and command routing.
+
+## 4. Run it in development
+
+```bash
+npm run dev
+```
+
+The starter runs a Vite dev server. On every save it rebuilds your extension and serves it at `/built.drawdyx`, exposing a `/version` endpoint that bumps on each build. Point Drawdy's development mode at the dev server URL; Drawdy polls `/version` and hot-reloads the driver whenever it changes.
+
+## 5. Package for distribution
+
+```bash
+npm run build
+```
+
+This produces `dist/<driver-id>.drawdyx` — the zip of your `manifest.json` and `main.js`. That single file is the whole extension. Anyone can install it into Drawdy.
+
+### The `.drawdyx` format
+
+A `.drawdyx` is a plain zip with two entries:
+
+```
+manifest.json    the DriverManifest
+main.js          a single CommonJS bundle exporting `activate` and `onEvent`
+```
+
+The bundle **must** be CommonJS with named exports — Drawdy instantiates it with `new Function("exports", "module", code)` and reads `module.exports.activate`. The starter's Rollup config emits exactly this; if you roll your own build, target `format: "cjs"` with `exports: "named"`.
+
+## Learn from the examples
+
+The protocol repo ships runnable examples under [`examples/`](https://github.com/drawdyio/drawdy-driver-protocol) — `drawdy-hello`, `drawdy-math-symbols`, and `drawdy-physics-engine` — each using this same template. They are the best reference for real drivers.

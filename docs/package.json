@@ -1,0 +1,9 @@
+{
+    "name": "drawdy-driver-protocol-docs",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "mint dev",
+        "check": "mint broken-links"
+    }
+}

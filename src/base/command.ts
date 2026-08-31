@@ -1,15 +1,15 @@
 import { DistributiveOmit, ProtocolCommand } from "./base";
+import { ContextMenu } from "./context-menu";
+import { DriverElement } from "./driver-element";
 import {
     ElementSchema,
     SubscribeableKey,
     SubscribedDrawdyElement,
     UpdateableProperties,
 } from "./element-schema";
-import { DriverElement } from "./driver-element";
-import { ContextMenu } from "./context-menu";
 import { ScenePreviewCommand } from "./preview";
 import { DriverSubscription } from "./subscription";
-import { StyleableToolId, ToolId, ToolStyleState } from "./tool-state";
+import { StyleableToolId, ToolStyleState } from "./tool-state";
 
 /**
  * Commands set sent from driver to drawdy.
@@ -349,29 +349,6 @@ export type DriverCommand =
               >;
           },
           undefined
-      >
-    | ProtocolCommand<
-          "command:island:add-section",
-          {
-              island: ToolId;
-              schema: ElementSchema;
-              visibleWhen?: {
-                  anySelectedElementType?: string[];
-              };
-          },
-          {
-              /**
-               * false when an existing section was replaced.
-               */
-              added: boolean;
-          }
-      >
-    | ProtocolCommand<
-          "command:island:remove-section",
-          {
-              island: ToolId;
-          },
-          { removed: boolean }
       >
     | ProtocolCommand<
           "command:context-menu:add",

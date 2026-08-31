@@ -1,0 +1,23 @@
+{
+    "$schema": "https://mintlify.com/docs.json",
+    "theme": "mint",
+    "name": "Drawdy Driver Protocol",
+    "colors": {
+        "primary": "#2f6feb",
+        "light": "#4f8bff",
+        "dark": "#2f6feb"
+    },
+    "navigation": {
+        "groups": [
+            {
+                "group": "Guide",
+                "pages": ["intro", "quickstart", "protocol"]
+            }
+        ]
+    },
+    "footer": {
+        "socials": {
+            "github": "https://github.com/drawdyio/drawdy-driver-protocol"
+        }
+    }
+}
