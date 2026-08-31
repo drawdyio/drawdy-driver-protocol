@@ -2,8 +2,14 @@
     "name": "drawdy-driver-protocol-docs",
     "version": "0.1.0",
     "private": true,
+    "engines": {
+        "node": ">=20.17.0"
+    },
     "scripts": {
-        "dev": "mint dev",
-        "check": "mint broken-links"
+        "dev": "mint dev --port 3300 --no-open",
+        "validate": "mint validate && mint broken-links --check-anchors"
+    },
+    "devDependencies": {
+        "mint": "^4.2.851"
     }
 }

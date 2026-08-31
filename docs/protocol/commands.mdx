@@ -1,0 +1,323 @@
+---
+title: "Commands"
+description: "Every command a driver can issue to Drawdy, with its request and response types."
+---
+
+Commands flow from the driver to Drawdy. Each entry below lists the `type`, its request `req`, and its response `res.value`. A dash means none.
+
+## Camera
+
+```ts
+"command:camera:get-info"
+res: { x: number; y: number; zoom: number }
+
+"command:camera:fly-to-elements"
+req: { drawdyElementIds: string[]; flyDurationMs: number; zoom: number }
+
+"command:camera:fly-to-rect"
+req: {
+    rect: { x: number; y: number; width: number; height: number };
+    flyDurationMs: number;
+    zoom: number;
+}
+
+"command:camera:screen-to-canvas"
+req: { x: number; y: number }
+res: { x: number; y: number }
+
+"command:camera:canvas-to-screen"
+req: { x: number; y: number }
+res: { x: number; y: number }
+
+"command:camera:get-viewport-rect"
+res: { rect: { x: number; y: number; width: number; height: number } }
+```
+
+`fly-to-rect`'s `zoom` is the maximum zoom; the camera fits the rect. `get-viewport-rect` returns the visible canvas area in canvas coordinates.
+
+## Scene: elements
+
+```ts
+"command:scene:add-drawdy-elements"
+req: { elements: DriverElement[] }
+res: { added: boolean }
+
+"command:scene:remove-drawdy-elements"
+req: { drawdyElementIds: string[] }
+res: { removed: number }
+
+"command:scene:update-drawdy-elements"
+req: {
+    updates: {
+        drawdyElementId: string;
+        properties: UpdateableProperties;
+    }[];
+}
+res: { updated: number }
+
+"command:scene:get-drawdy-elements"
+req: { properties: SubscribeableKey[] }
+res: { drawdyElements: SubscribedDrawdyElement[] }
+
+"command:scene:query-rect"
+req: {
+    rect: { x: number; y: number; width: number; height: number };
+    properties: SubscribeableKey[];
+}
+res: { drawdyElements: SubscribedDrawdyElement[] }
+
+"command:scene:query-combined-rect"
+req: { drawdyElementIds: string[] }
+res: { rect: { x: number; y: number; width: number; height: number } | null }
+
+"command:scene:element-rects"
+req: { drawdyElementIds: string[] }
+res: {
+    rects: {
+        drawdyElementId: string;
+        rect: { x: number; y: number; width: number; height: number };
+    }[];
+}
+
+"command:scene:set-selection"
+req: { drawdyElementIds: string[] }
+
+"command:scene:clear-selection"
+
+"command:scene:get-selected-ids"
+res: { drawdyElementIds: string[] }
+
+"command:scene:capture-screenshot"
+req: { area: { x: number; y: number; width: number; height: number } }
+res: { png: Blob }
+```
+
+- When updating, `meta` is **merged** into the element's existing meta; every other property is set as given. See [`UpdateableProperties`](/protocol/data-types#element-properties).
+- `query-combined-rect` returns the union of the elements' bounding rects, or `null` when none of the ids exist.
+- The properties you pass to `get-drawdy-elements` and `query-rect` select which fields come back on each [`SubscribedDrawdyElement`](/protocol/data-types#element-properties).
+
+## Scene: preview elements
+
+Preview elements are ephemeral: they render but are not committed to the scene.
+
+```ts
+"command:scene:create-drawdy-preview-elements"
+req: { elements: DriverElement[] }
+res: { previewed: number; previewId: string }
+
+"command:scene:delete-drawdy-preview-elements"
+req: { previewIds: string[] }
+res: { deleted: number }
+```
+
+## Scene: preview transforms
+
+A separate lifecycle for animating **existing** elements without touching undo history or collaboration until you commit. `begin-preview` snapshots each element's rest geometry and moves it onto the animation layer; `preview-transforms` bakes per-tick deltas from that rest pose into real local geometry silently (nothing syncs, enters undo, or echoes as a scene event — but hit-testing and selection follow); `end-preview` restores non-committed elements, optionally baking final deltas as one undo step and one sync.
+
+```ts
+"command:scene:begin-preview"
+req: { drawdyElementIds: string[]; holdOnDrag?: boolean }
+res: { began: string[] }
+
+"command:scene:preview-transforms"
+req: {
+    previews: { drawdyElementId: string; transform: PreviewTransform }[];
+}
+
+"command:scene:end-preview"
+req: {
+    commits?: {
+        drawdyElementId: string;
+        dx: number;
+        dy: number;
+        dRotation: number;
+    }[];
+}
+res: { committed: number }
+```
+
+- `began` is the subset of ids that entered preview. Grouped elements are rejected — their rotation pivot is the group center.
+- In `end-preview`, elements listed in `commits` are baked as one undo step; elements absent are restored. `dRotation` is radians about the element's bounding-box center.
+
+See [`PreviewTransform`](/protocol/data-types#previewtransform).
+
+## Scene: text editing
+
+```ts
+"command:scene:cancel-text-edit"
+res: { cancelled: boolean }
+
+"command:scene:update-text-edit"
+req: { text: string }
+res: { updated: boolean }
+```
+
+`update-text-edit` replaces the text of the active text edit in place, keeping the editor open so the user can keep typing. `updated` is `false` when no text edit is in progress.
+
+## Tools
+
+```ts
+"command:tools:get-active"
+res: { toolId: string | null }
+
+"command:tools:set-active"
+req: { toolId: string }
+
+"command:tools:update-settings"
+req: {
+    settings: {
+        strokeColor?: string;
+        strokeWidth?: number;
+        opacity?: number;
+        strokeTexture?: Record<string, unknown> | null;
+    };
+}
+
+"command:scene:query-tool-state"
+req: { toolId: StyleableToolId }
+res: { state: ToolStyleState | null }
+
+"command:tools:emulate-pointer"
+req: {
+    actions: Array<
+        | { kind: "down"; point: [number, number]; pressure?: number }
+        | { kind: "move"; point: [number, number]; pressure?: number }
+        | { kind: "up"; point: [number, number] }
+        | { kind: "cancel" }
+    >;
+}
+```
+
+See [`ToolId`](/protocol/data-types#toolstylestate), [`StyleableToolId`](/protocol/data-types#toolstylestate), and [`ToolStyleState`](/protocol/data-types#toolstylestate).
+
+## Context menus
+
+```ts
+"command:context-menu:add"
+req: ContextMenu
+res: { added: boolean }
+
+"command:context-menu:remove"
+req: { menuId: string }
+res: { removed: boolean }
+```
+
+```ts
+type ContextMenu = {
+    menuId: string;
+    menuTitle: string;
+    children?: ContextMenu[];
+};
+```
+
+Subscribe to [`subscription:context-menu:clicked`](/protocol/subscriptions#input-events) to know when a menu item is chosen.
+
+## DOM
+
+Drawdy exposes a handful of host-DOM primitives for buttons, floating panels, and window geometry.
+
+```ts
+"command:dom:create-action-button"
+req: { domElementId: string; svg: string }
+res: { created: boolean }
+
+"command:dom:create-floating-element"
+req: {
+    domId: string;
+    position: { x: number; y: number };
+    schema: ElementSchema;
+    barrierDismissible?: boolean;
+}
+res: { created: boolean }
+
+"command:dom:remove-element"
+req: { domId: string }
+res: { removed: boolean }
+
+"command:dom:element-rect"
+req: { elementId: string }
+res: { width: number; height: number; x: number; y: number }
+
+"command:dom:window-size"
+res: { width: number; height: number }
+
+"command:dom:enter-fullscreen"
+res: { entered: boolean }
+
+"command:dom:exit-fullscreen"
+res: { exited: boolean }
+```
+
+- `create-action-button` currently accepts `svg` only; other formats may come later.
+- `create-floating-element`'s `position` is a fixed position in the DOM. When `barrierDismissible` is true, clicking outside dismisses it (same effect as `dom:remove-element`); the driver is **not** notified — poll `dom:element-rect` if you need to know. Defaults to false.
+- `enter-fullscreen` returns `entered: false` when the browser refused or doesn't support it; `exit-fullscreen` returns `exited: false` when the document wasn't fullscreen.
+
+## Webviews
+
+A webview is an isolated HTML document Drawdy hosts for you. Two-way messaging goes through the [webview API](/protocol/webview-api).
+
+```ts
+"command:webview:create"
+req: {
+    webviewDomId: string;
+    htmlContent: string;
+    keepStateWhenClosed?: boolean;
+}
+res: { created: boolean }
+
+"command:webview:hide"
+req: { webviewDomId: string }
+
+"command:webview:post-message"
+req: { webviewDomId: string; message: unknown }
+res: { posted: boolean }
+```
+
+- When `keepStateWhenClosed` is true, closing the webview only hides it — it stays active and dies with the tab, at the cost of resources. Prefer stateless webviews.
+- `post-message` returns `posted: false` when the webview doesn't exist or isn't connected yet.
+- Receive messages from the webview by subscribing to [`subscription:webview:message`](/protocol/subscriptions#webview-events).
+
+## Storage
+
+Two key/value stores scoped to your driver. `kv-storage` is plain; `secure-storage` is for secrets.
+
+```ts
+"command:kv-storage:set"
+req: { key: string; payload: Record<string, unknown> }
+
+"command:kv-storage:get"
+req: { key: string }
+res: { got?: Record<string, unknown> }
+
+"command:kv-storage:delete"
+req: { key: string }
+res: { deleted: boolean }
+
+"command:secure-storage:set"
+req: { key: string; payload: Record<string, unknown> }
+
+"command:secure-storage:get"
+req: { key: string }
+res: { got?: Record<string, unknown> }
+
+"command:secure-storage:delete"
+req: { key: string }
+res: { deleted: boolean }
+```
+
+## History
+
+```ts
+"command:history:undo"
+"command:history:redo"
+```
+
+## Subscription management
+
+```ts
+"command:subscription:remove"
+req: { subscriptionId: string }
+res: { removed: boolean }
+```
+
+Pass the `subscriptionId` you received when you set the subscription up. See [Subscriptions](/protocol/subscriptions).

@@ -1,23 +1,94 @@
 {
     "$schema": "https://mintlify.com/docs.json",
     "theme": "mint",
-    "name": "Drawdy Driver Protocol",
+    "name": "DDP",
     "colors": {
-        "primary": "#2f6feb",
-        "light": "#4f8bff",
-        "dark": "#2f6feb"
+        "primary": "#597100",
+        "light": "#bceb00",
+        "dark": "#597100"
+    },
+    "appearance": {
+        "default": "dark"
+    },
+    "background": {
+        "color": {
+            "light": "#ffffff",
+            "dark": "#18181b"
+        }
+    },
+    "fonts": {
+        "heading": {
+            "family": "Google Sans Flex",
+            "weight": 600
+        },
+        "body": {
+            "family": "Google Sans Flex",
+            "weight": 400
+        }
+    },
+    "styling": {
+        "codeblocks": "system"
+    },
+    "favicon": "/favicon.svg",
+    "logo": {
+        "light": "/logo/light.svg",
+        "dark": "/logo/dark.svg"
     },
     "navigation": {
         "groups": [
             {
                 "group": "Guide",
-                "pages": ["intro", "quickstart", "protocol"]
+                "pages": [
+                    "index",
+                    "quickstart",
+                    "examples"
+                ]
+            },
+            {
+                "group": "Protocol reference",
+                "pages": [
+                    "protocol/overview",
+                    "protocol/commands",
+                    "protocol/subscriptions",
+                    "protocol/webview-api",
+                    "protocol/data-types"
+                ]
             }
+        ]
+    },
+    "navbar": {
+        "links": [
+            {
+                "label": "GitHub",
+                "href": "https://github.com/drawdyio/drawdy-driver-protocol"
+            }
+        ]
+    },
+    "contextual": {
+        "options": [
+            "copy",
+            "view",
+            "chatgpt",
+            "claude",
+            "perplexity",
+            "mcp",
+            "cursor",
+            "vscode"
         ]
     },
     "footer": {
         "socials": {
             "github": "https://github.com/drawdyio/drawdy-driver-protocol"
         }
-    }
+    },
+    "redirects": [
+        {
+            "source": "/intro",
+            "destination": "/"
+        },
+        {
+            "source": "/protocol",
+            "destination": "/protocol/overview"
+        }
+    ]
 }

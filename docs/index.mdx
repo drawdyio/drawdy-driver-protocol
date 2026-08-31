@@ -3,12 +3,18 @@ title: "Introduction"
 description: "The Drawdy Driver Protocol and how extensions drive the Drawdy canvas."
 ---
 
-The **Drawdy Driver Protocol** is the contract between a Drawdy extension — a *driver* — and the Drawdy application that hosts it. A driver is a small JavaScript bundle that runs inside a sandboxed host worker and drives the canvas: it places elements, moves the camera, adds menus and panels, opens webviews, and reacts to what the user does.
+The **Drawdy Driver Protocol (DDP)** is the contract between a Drawdy extension — a *driver* — and the Drawdy application that hosts it. A driver is a small JavaScript bundle that runs inside a sandboxed host worker and drives the canvas: it places elements, moves the camera, adds menus and panels, opens webviews, and reacts to what the user does.
 
 This site documents that contract:
 
-- **[Quickstart](/quickstart)** — build and run your first driver in a few minutes.
-- **[Protocol Reference](/protocol)** — every command, subscription, and data type.
+<Columns cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Build, run, and package your first driver in a few minutes.
+  </Card>
+  <Card title="Protocol reference" icon="book-open" href="/protocol/overview">
+    Every command, subscription, event, and data type.
+  </Card>
+</Columns>
 
 ## The model
 

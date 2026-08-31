@@ -1,0 +1,100 @@
+---
+title: "Overview"
+description: "The message envelope, the driver module contract, and the manifest."
+---
+
+The Drawdy Driver Protocol is the message envelope, the driver module contract, every command and subscription, and the data types they carry. All of it is exported as types from `@drawdy/driver-protocol`. This page covers the envelope, the module, and the manifest.
+
+## The envelope
+
+Every message — command or subscription — is a `ProtocolCommand`:
+
+```ts
+type ProtocolCommand<T, REQ, RES> = {
+    driverId: string;
+    requestId: string;
+    type: T;
+    res: { error?: never; value: RES } | { error: string; value?: never };
+} & (REQ extends undefined ? {} : { req: REQ });
+```
+
+- **`type`** identifies the command, e.g. `"command:camera:get-info"`.
+- **`driverId`** is your extension's id (from the manifest).
+- **`requestId`** is any value unique within your driver; it pairs a response to its request.
+- **`req`** carries the request payload. Commands with no input omit it.
+- **`res`** is the response: either `{ value }` or `{ error }`.
+
+You never build the whole object with `res` yourself. You issue a **request** — the command minus `res` — and receive a **response** — the command minus `req`:
+
+```ts
+type DriverCommandRequest = DistributiveOmit<DriverCommand, "res">;
+type DriverCommandResponse = DistributiveOmit<DriverCommand, "req">;
+```
+
+Read a result off `response.res`:
+
+```ts
+const response = await issueCommand({
+    type: "command:camera:get-info",
+    driverId,
+    requestId: nextRequestId(),
+});
+
+if (response.res.error) {
+    // handle failure
+} else {
+    const { x, y, zoom } = response.res.value;
+}
+```
+
+Two guarantees hold across the envelope: **every request resolves** (with a value or an error), and **requests are processed in the order Drawdy receives them**.
+
+## The driver module
+
+A driver exports a `DriverModule`:
+
+```ts
+type DriverModule = {
+    activate(args: {
+        issueCommand: DriverCommandIssuer;
+        manifest: DriverManifest;
+        styling: ModuleStyling;
+        generateId: () => string;
+    }): Promise<void>;
+
+    onEvent(e: DriverSubscriptionEvent): Promise<void>;
+};
+
+type DriverCommandIssuer = <R extends DriverCommandRequest>(
+    r: R
+) => Promise<DriverCommandResponseFor<R>>;
+```
+
+- **`activate`** runs once when Drawdy loads the driver. Use it to register menus, panels, and subscriptions, and to issue any startup commands.
+  - **`issueCommand`** sends a command and resolves to its typed response.
+  - **`manifest`** is the registered [manifest](#manifest).
+  - **`styling`** is the current theme — see [`ModuleStyling`](/protocol/data-types#modulestyling).
+  - **`generateId`** mints ids for canvas elements you create.
+- **`onEvent`** receives every [subscription event](/protocol/subscriptions) your driver is registered for.
+
+## Manifest
+
+```ts
+interface DriverManifest {
+    driverId: string;
+    driverName: string;
+    driverVersion: string;
+    apiVersion: string;
+    description?: string;
+    main: string;
+}
+```
+
+`main` is the entry bundle filename inside the `.drawdyx` zip. The host confirms the manifest on load; an invalid id, missing capability, or wrong `apiVersion` lets the host decide how to proceed.
+
+## In this section
+
+- **[Commands](/protocol/commands)** — every command a driver can issue, with its request and response.
+- **[Subscriptions](/protocol/subscriptions)** — the events Drawdy pushes to `onEvent`.
+- **[Webview API](/protocol/webview-api)** — the `acquireDrawdyApi()` global inside a webview document.
+- **[Data Types](/protocol/data-types)** — elements, schemas, styling, tool state, and CSS units.

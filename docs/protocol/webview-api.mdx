@@ -1,0 +1,16 @@
+---
+title: "Webview API"
+description: "The `acquireDrawdyApi()` global available inside a webview document."
+---
+
+Inside a webview document, Drawdy injects a global `acquireDrawdyApi()`. Acquire it once; messages you post reach the owning driver as [`subscription:webview:message`](/protocol/subscriptions#webview-events) events.
+
+```ts
+type DrawdyWebviewApi = {
+    postMessage(message: unknown, transfer?: Transferable[]): void;
+    onMessage(listener: (message: unknown) => void): () => void;
+};
+```
+
+- **`postMessage`** sends a driver-defined message. It is buffered until the host connects, so it is safe to call immediately. Large payloads (`ArrayBuffer`, `ImageBitmap`, …) referenced inside `message` can be listed in `transfer` to move rather than copy them; they are re-transferred at every relay hop.
+- **`onMessage`** listens for messages the driver sends via [`command:webview:post-message`](/protocol/commands#webviews). It returns a dispose function.

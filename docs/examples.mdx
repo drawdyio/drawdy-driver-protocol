@@ -1,0 +1,50 @@
+---
+title: "Examples"
+description: "Three runnable drivers in the protocol repo, from a hello world to a physics simulation, and the protocol surface each one uses."
+---
+
+The protocol repo ships three drivers under [`examples/`](https://github.com/drawdyio/drawdy-driver-protocol/tree/main/examples). Each is a Vite project with the same scripts: `dev` starts the dev server that Drawdy's development mode hot-reloads from, `build` packs `dist/<driver-id>.drawdyx` (dots in the id become dashes, so `drawdy.hello` builds `dist/drawdy-hello.drawdyx`), and `typecheck` runs `tsc`.
+
+From the repo root:
+
+```bash
+pnpm install
+pnpm --filter drawdy-hello dev     # dev server for Drawdy's development mode
+pnpm --filter drawdy-hello build   # writes examples/drawdy-hello/dist/drawdy-hello.drawdyx
+```
+
+## Drawdy Hello
+
+<Card title="drawdy-hello" icon="hand-wave" href="https://github.com/drawdyio/drawdy-driver-protocol/tree/main/examples/drawdy-hello">
+  `drawdy.hello`: says hello to the drawdy main loop. One source file.
+</Card>
+
+Shows the smallest useful driver: [`subscription:scene:elements-added`](/protocol/subscriptions#scene-events), [`command:camera:get-info`](/protocol/commands#camera), and [`command:camera:fly-to-elements`](/protocol/commands#camera).
+
+## Math Symbols
+
+<Card title="drawdy-math-symbols" icon="square-root-variable" href="https://github.com/drawdyio/drawdy-driver-protocol/tree/main/examples/drawdy-math-symbols">
+  `drawdy.math-symbols`: drag Greek letters, operators, and math notation straight onto the canvas.
+</Card>
+
+Shows:
+
+- A [webview](/protocol/commands#webviews): `command:webview:create`, `command:webview:post-message`, `subscription:webview:message`, and `acquireDrawdyApi()` from the [webview API](/protocol/webview-api) inside it.
+- An [action button](/protocol/commands#dom): `command:dom:create-action-button`, `subscription:dom:element-clicked`, `command:dom:element-rect`.
+- [Preview elements](/protocol/commands#scene-preview-elements) during drag and drop: `command:scene:create-drawdy-preview-elements`, `command:scene:delete-drawdy-preview-elements`, then `command:scene:add-drawdy-elements`.
+- [Text editing](/protocol/commands#scene-text-editing): `subscription:scene:text-edit`, `command:scene:update-text-edit`.
+- Also `subscription:dom:theme-changed`, `subscription:keyboard:control-keys`, `command:scene:query-tool-state`, `command:camera:screen-to-canvas`, and `command:camera:get-viewport-rect`.
+
+## Physics Engine
+
+<Card title="drawdy-physics-engine" icon="atom" href="https://github.com/drawdyio/drawdy-driver-protocol/tree/main/examples/drawdy-physics-engine">
+  `drawdy.physics-engine`: simulate selected elements as 2D rigid bodies: gravity, collisions, and impulse response.
+</Card>
+
+Shows:
+
+- [Context menus](/protocol/commands#context-menus): `command:context-menu:add`, `command:context-menu:remove`, `subscription:context-menu:clicked`.
+- Reading the selection: `command:scene:get-selected-ids`, `command:scene:get-drawdy-elements`.
+- The [preview-transform lifecycle](/protocol/commands#scene-preview-transforms): `command:scene:begin-preview`, `command:scene:preview-transforms`, `command:scene:end-preview`, plus `command:scene:update-drawdy-elements`.
+- [Scene events](/protocol/subscriptions#scene-events) `elements-added`, `elements-updated`, `elements-removed`, `elements-replaced`, and [`subscription:camera:moved-rapid`](/protocol/subscriptions#camera-events).
+- A physics engine under `src/engine/` (broadphase, narrowphase, impulses, frame clock) with Jest tests: `pnpm --filter drawdy-physics-engine test`.

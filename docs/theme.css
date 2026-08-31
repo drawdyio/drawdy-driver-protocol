@@ -1,0 +1,26 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap");
+
+/* Drawdy neutrals. Mintlify compiles every grey utility to rgb(var(--gray-N)) and derives its own
+   scale from colors.primary, so a lime primary would tint the greys green. These are Tailwind zinc,
+   the values frontend/app/globals.css in the Drawdy repo resolves to. Space-separated RGB triplets,
+   never hex. html:root outranks Mintlify's :root block wherever the hosted build places it. */
+html:root {
+    --gray-50: 250 250 250;
+    --gray-100: 244 244 245;
+    --gray-200: 228 228 231;
+    --gray-300: 212 212 216;
+    --gray-400: 161 161 170;
+    --gray-500: 113 113 122;
+    --gray-600: 82 82 91;
+    --gray-700: 63 63 70;
+    --gray-800: 39 39 42;
+    --gray-900: 24 24 27;
+    --gray-950: 9 9 11;
+}
+
+/* Code font. docs.json cannot set a mono family in the mint theme; --font-paper-mono is what
+   pre/code, the line-number gutters (.font-mono) and .font-family-mono all read. */
+html:root {
+    --font-paper-mono: "DM Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --font-family-mono-custom: var(--font-paper-mono);
+}

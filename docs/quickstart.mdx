@@ -105,7 +105,7 @@ A few things to notice:
 - **Subscriptions are set up by issuing a command.** `subscription:context-menu:clicked` registers interest; the matching events then arrive in `onEvent`.
 - **`generateId`** mints ids for the canvas elements you create.
 
-See the full command and event catalogue in the **[Protocol Reference](/protocol)**.
+See the full command and event catalogue in the **[Protocol Reference](/protocol/overview)**.
 
 ## 3. The manifest
 
@@ -153,4 +153,4 @@ The bundle **must** be CommonJS with named exports — Drawdy instantiates it wi
 
 ## Learn from the examples
 
-The protocol repo ships runnable examples under [`examples/`](https://github.com/drawdyio/drawdy-driver-protocol) — `drawdy-hello`, `drawdy-math-symbols`, and `drawdy-physics-engine` — each using this same template. They are the best reference for real drivers.
+The protocol repo ships three runnable drivers, `drawdy-hello`, `drawdy-math-symbols`, and `drawdy-physics-engine`, each built with this same template. See [Examples](/examples) for what each one shows, or browse [`examples/`](https://github.com/drawdyio/drawdy-driver-protocol/tree/main/examples) on GitHub.

@@ -1,0 +1,303 @@
+---
+title: "Data Types"
+description: "DriverElement, ElementSchema, element properties, ModuleStyling, ToolStyleState, PreviewTransform, and CSS units."
+---
+
+## DriverElement
+
+The elements you add to the canvas with `scene:add-drawdy-elements` and preview commands. All variants share a common base:
+
+```ts
+type DriverElementCommon = {
+    drawdyElementId: string;
+    layer?: number;
+    meta?: Record<string, any>;
+};
+
+type StrokeDash = "solid" | "dashed" | "dotted";
+type TextAlign = "left" | "center" | "right";
+```
+
+```ts
+type DriverElement =
+    | (DriverElementCommon & {
+          type: "frame";
+          position: [number, number];
+          width: number;
+          height: number;
+          rotation: number;
+          meta: Record<string, any>;
+      })
+    | (DriverElementCommon & {
+          type: "freedraw";
+          points: number[];
+          width: number;
+          height: number;
+          meta: Record<string, any>;
+      })
+    | (DriverElementCommon & {
+          type: "shape";
+          componentType?: "rect" | "circle" | "diamond";
+          x: number;
+          y: number;
+          width: number;
+          height: number;
+          strokeColor: string;
+          fillColor: string;
+          strokeWidth?: number;
+          strokeDash?: StrokeDash;
+          cornerRadius?: number;
+          roughness?: number;
+          text?: string;
+          fontSize?: number;
+          textAlign?: TextAlign;
+          textVerticalAlign?: "top" | "middle" | "bottom";
+      })
+    | (DriverElementCommon & {
+          type: "line";
+          from: [number, number];
+          to: [number, number];
+          bend?: [number, number] | [number, number][];
+          color: string;
+          strokeWidth?: number;
+          strokeDash?: StrokeDash;
+      })
+    | (DriverElementCommon & {
+          type: "arrow";
+          from: [number, number];
+          to: [number, number];
+          bend?: [number, number];
+          color: string;
+          strokeWidth?: number;
+          strokeDash?: StrokeDash;
+      })
+    | (DriverElementCommon & {
+          type: "image";
+          url: string;
+          x: number;
+          y: number;
+          width: number;
+          height: number;
+      })
+    | (DriverElementCommon & {
+          type: "text";
+          x: number;
+          y: number;
+          width?: number;
+          height?: number;
+          text: string;
+          fontSize: number;
+          color: string;
+          textAlign?: TextAlign;
+      });
+```
+
+- `shape.roughness`: `0` is crisp, higher is sketchier. `text` is a label rendered inside the shape.
+- `line.bend` curves the line through one control point (quadratic) or several (through every bend, in order). `arrow.bend` curves the shaft through a single control point.
+- `text.width`/`height` are optional and can be measured later.
+
+## ElementSchema
+
+The declarative UI tree for floating elements. Layout primitives nest via `children`; leaves carry a `child`.
+
+```ts
+type ElementSchema =
+    | { type: "button"; children?: ElementSchema[]; domId?: string; styles?: ElementSchemaStyles }
+    | { type: "box"; children?: ElementSchema[]; domId?: string; styles?: ElementSchemaStyles }
+    | {
+          type: "grid";
+          children?: ElementSchema[];
+          domId?: string;
+          styles?: ElementSchemaStyles & Partial<{ columns: number; gap: number }>;
+      }
+    | {
+          type: "column" | "row";
+          children?: ElementSchema[];
+          domId?: string;
+          styles?: ElementSchemaStyles & Partial<{ gap: number } & AlignmentStyles>;
+      }
+    | {
+          type: "text";
+          child: string;
+          domId?: string;
+          styles?: ElementSchemaStyles &
+              Partial<{
+                  color: string;
+                  fontSize: Dimension;
+                  fontWeight: FontWeight;
+                  textAlign: "start" | "center" | "end";
+              }>;
+      }
+    | { type: "image"; child: string; domId?: string; styles?: ElementSchemaStyles };
+```
+
+```ts
+type FontWeight = "normal" | "medium" | "semibold" | "bold";
+type Alignment = "between" | "around" | "start" | "center" | "end";
+type AlignmentStyles = {
+    mainAxisAlignment: Alignment;
+    crossAxisAlignment: Alignment;
+};
+
+type Dimension = [number, CSSUnit];
+
+type ElementSchemaBaseStyles = Partial<{
+    width: Dimension;
+    height: Dimension;
+    backgroundColor: string;
+    borderColor: string;
+    padding: Dimension;
+    borderType: "solid" | "dotted";
+    borderWidth: Dimension;
+    borderRadius: Dimension;
+    overflow: "visible" | "hidden" | "clip" | "scroll" | "auto";
+}>;
+
+type ElementSchemaStyles = ElementSchemaBaseStyles & {
+    hover?: ElementSchemaBaseStyles;
+};
+```
+
+For `image`, `child` is the image URL and may be an SVG string. `domId` gives an element a handle you can target with DOM commands and click subscriptions.
+
+## Element properties
+
+The property set you can read back from the scene and update on it.
+
+```ts
+type SubscribeableProperties = {
+    type: string;
+    componentType: string;
+    meta: Record<string, unknown>;
+    locked: boolean;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    points: [number, number][];
+    rotation: number;
+    text: string;
+};
+
+type SubscribeableKey = keyof SubscribeableProperties;
+
+type DrawdyElement = { id: string };
+type SubscribedDrawdyElement = DrawdyElement & Partial<SubscribeableProperties>;
+```
+
+When you query or subscribe you pass a list of `SubscribeableKey`; each returned `SubscribedDrawdyElement` carries `id` plus exactly the properties you asked for.
+
+Updates are a partial patch:
+
+```ts
+type UpdateableProperties = Partial<{
+    meta: Record<string, unknown>;
+    locked: boolean;
+    localTransform: {
+        x: number;
+        y: number;
+        scale: number;
+        rotation: number;
+    };
+}>;
+```
+
+`meta` merges into existing meta; `localTransform.rotation` is applied on top of the element's starting rotation.
+
+## ModuleStyling
+
+The theme handed to `activate` and re-delivered on [`subscription:dom:theme-changed`](/protocol/subscriptions#dom-events). Each field is a resolved CSS value string.
+
+```ts
+type ModuleStyling = {
+    theme: "dark" | "light";
+    background: string;
+    foreground: string;
+    surface: string;
+    surface2: string;
+    mutedForeground: string;
+    primary: string;
+    primaryForeground: string;
+    accent: string;
+    accentForeground: string;
+    border: string;
+    input: string;
+    ring: string;
+    destructive: string;
+    success: string;
+    warning: string;
+    radiusSm: string;
+    radiusMd: string;
+    radiusLg: string;
+};
+```
+
+For example, `{ theme: "light", background: "#fff", radiusSm: "2px", ... }`.
+
+## ToolStyleState
+
+The style state of a built-in tool, returned by `scene:query-tool-state`.
+
+```ts
+type ToolStyleState =
+    | { toolId: "text"; fontSize: number; color: string; textAlign?: TextAlign; opacity?: number }
+    | { toolId: "eraser"; size: number }
+    | {
+          toolId: "rect" | "circle" | "diamond";
+          strokeColor: string;
+          fillColor?: string;
+          strokeWidth: number;
+          strokeDash?: StrokeDash;
+          cornerRadius?: number;
+          opacity?: number;
+      }
+    | { toolId: "line" | "arrow"; strokeColor: string; strokeWidth: number; strokeDash?: StrokeDash; opacity?: number }
+    | { toolId: "pencil"; strokeColor: string; strokeWidth: number; opacity?: number }
+    | { toolId: "laser-pointer"; color: string; fadeDuration?: number };
+
+type StyleableToolId = ToolStyleState["toolId"];
+
+type ToolId =
+    | "select" | "drag" | "pencil" | "eraser" | "line" | "arrow"
+    | "text" | "rect" | "circle" | "diamond" | "image" | "laser-pointer";
+```
+
+`StyleableToolId` is the subset of `ToolId` that `ToolStyleState` covers.
+
+## PreviewTransform
+
+A pose delta from an element's rest pose, used by `scene:preview-transforms`.
+
+```ts
+type PreviewTransform = {
+    x: number;
+    y: number;
+    scale: number;
+    rotation: number;
+};
+```
+
+`x`/`y` are a world-space translation; `rotation` (radians) is applied on top of the element's rest rotation about its bounding-box center. `scale` is reserved and currently ignored.
+
+## CSS units
+
+`Dimension` values pair a number with a `CSSUnit`:
+
+```ts
+type CSSUnit =
+    | CSSLengthUnit
+    | CSSAngleUnit
+    | CSSTimeUnit
+    | CSSFrequencyUnit
+    | CSSResolutionUnit
+    | CSSOtherUnit;
+
+type CSSLengthUnit = CSSAbsoluteUnit | CSSFontUnit | CSSViewportUnit;
+
+type CSSAbsoluteUnit = "px" | "pt" | "pc" | "in" | "cm" | "mm" | "Q";
+type CSSAngleUnit = "deg" | "grad" | "rad" | "turn";
+type CSSTimeUnit = "s" | "ms";
+type CSSOtherUnit = "%" | "fr" | "st";
+```
+
+The full `CSSFontUnit`, `CSSViewportUnit`, `CSSFrequencyUnit`, and `CSSResolutionUnit` unions are exported as well; see `css-unit.ts` in the package.

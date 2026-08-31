@@ -1,0 +1,156 @@
+---
+title: "Subscriptions"
+description: "Scene, camera, DOM, webview, and input events, and the body each delivers."
+---
+
+Subscriptions push events to your driver. They travel through the same envelope as commands — a subscription **is** a command whose response returns a `subscriptionId`:
+
+```ts
+type ProtocolSubscription<T, REQ> = ProtocolCommand<
+    T,
+    REQ,
+    { subscriptionId: string }
+>;
+```
+
+## Subscribing
+
+Issue the `subscription:*` command in `activate`; the response carries the id you use to unsubscribe:
+
+```ts
+const res = await issueCommand({
+    type: "subscription:camera:moved-debounced",
+    driverId,
+    requestId: nextRequestId(),
+});
+const subscriptionId = res.res.value.subscriptionId;
+```
+
+From then on, matching events arrive in `onEvent`:
+
+```ts
+type ProtocolSubscriptionEvent<T, BODY> = {
+    type: T;
+    subscriptionId: string;
+} & (BODY extends undefined ? {} : { body: BODY });
+```
+
+Dispatch on `event.type`, read `event.body`, and unsubscribe with [`command:subscription:remove`](/protocol/commands#subscription-management).
+
+Each subscription topic below lists its request (the `subscription:*` `req`) and the `body` of the event it delivers.
+
+## Scene events
+
+```ts
+"subscription:scene:elements-added"
+req:  { properties: SubscribeableKey[] }
+body: {
+    drawdyElements: readonly SubscribedDrawdyElement[];
+    properties: SubscribeableKey[];
+}
+
+"subscription:scene:elements-removed"
+req:  { properties: SubscribeableKey[] }
+body: {
+    drawdyElements: readonly SubscribedDrawdyElement[];
+    properties: SubscribeableKey[];
+}
+
+"subscription:scene:elements-updated"
+req:  { properties: SubscribeableKey[] }
+body: {
+    drawdyElements: readonly SubscribedDrawdyElement[];
+    properties: SubscribeableKey[];
+}
+
+"subscription:scene:elements-replaced"
+req:  { properties: SubscribeableKey[] }
+body: {
+    drawdyElements: readonly SubscribedDrawdyElement[];
+    replaced: readonly SubscribedDrawdyElement[];
+    properties: SubscribeableKey[];
+}
+
+"subscription:scene:activity"
+req:  { rect: { x: number; y: number; width: number; height: number } }
+body: {
+    drawdyElementIds: string[];
+    rect: { x: number; y: number; width: number; height: number };
+}
+
+"subscription:scene:text-edit"
+body:
+    | {
+          type: "update";
+          rect: { x: number; y: number; width: number; height: number };
+          font: number;
+          lineHeight: number;
+          text: string;
+      }
+    | { type: "commit" | "cancel" }
+```
+
+The `properties` you pass when subscribing to element events select which fields populate each returned [`SubscribedDrawdyElement`](/protocol/data-types#element-properties). `elements-replaced` reports both the new elements (`drawdyElements`) and the ones they replaced (`replaced`). `scene:activity` fires whenever there is activity inside the rect you registered.
+
+## Camera events
+
+```ts
+"subscription:camera:moved-rapid"
+body: { x: number; y: number; zoom: number }
+
+"subscription:camera:moved-debounced"
+body: { x: number; y: number; zoom: number }
+```
+
+`moved-rapid` fires continuously during movement; `moved-debounced` fires once movement settles.
+
+## DOM events
+
+```ts
+"subscription:dom:element-clicked"
+req:  { domElementId: string }
+body: { domElementId: string; clientX: number; clientY: number }
+
+"subscription:dom:theme-changed"
+body: { styling: ModuleStyling }
+
+"subscription:dom:fullscreen-changed"
+body: { fullscreen: boolean }
+
+"subscription:dom:screen-resized"
+body: { width: number; height: number }
+```
+
+`theme-changed` delivers the updated [`ModuleStyling`](/protocol/data-types#modulestyling) whenever the user switches theme.
+
+## Webview events
+
+```ts
+"subscription:webview:message"
+req:  { webviewDomId: string }
+body: { webviewDomId: string; message: unknown }
+```
+
+## Input events
+
+```ts
+"subscription:context-menu:clicked"
+req:  { menuId: string }
+body: { menuId: string }
+
+"subscription:keyboard:control-keys"
+body: {
+    key: ControlKey;
+    shift: boolean;
+    ctrl: boolean;
+    meta: boolean;
+    alt: boolean;
+}
+```
+
+```ts
+type ControlKey =
+    | "tab" | "enter" | "shift" | "escape" | "space"
+    | "backspace" | "delete"
+    | "arrow-up" | "arrow-down" | "arrow-left" | "arrow-right";
+```
