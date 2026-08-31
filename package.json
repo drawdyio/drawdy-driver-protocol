@@ -7,6 +7,7 @@
     "access": "public"
   },
   "type": "module",
+  "packageManager": "pnpm@10.28.2",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "repository": {
@@ -26,7 +27,9 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run build",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests",
+    "docs:dev": "pnpm --filter drawdy-driver-protocol-docs dev",
+    "docs:validate": "pnpm --filter drawdy-driver-protocol-docs validate"
   },
   "devDependencies": {
     "@swc/jest": "^0.2.39",

@@ -1,2 +1,4 @@
 node_modules
 dist
+.mintlify
+package-lock.json
