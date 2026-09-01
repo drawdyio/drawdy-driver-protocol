@@ -1,15 +1,15 @@
-import { DistributiveOmit, ProtocolCommand } from "./base";
-import { ContextMenu } from "./context-menu";
-import { DriverElement } from "./driver-element";
+import { DistributiveOmit, ProtocolCommand } from "../base";
+import { ContextMenu } from "../context-menu";
+import { DriverElement } from "../driver-element";
 import {
     ElementSchema,
     SubscribeableKey,
     SubscribedDrawdyElement,
     UpdateableProperties,
-} from "./element-schema";
-import { ScenePreviewCommand } from "./preview";
-import { DriverSubscription } from "./subscription";
-import { StyleableToolId, ToolStyleState } from "./tool-state";
+} from "../element-schema";
+import { ScenePreviewCommand } from "../preview";
+import { DriverSubscription } from "../subscription";
+import { StyleableToolId, ToolStyleState } from "../tool-state";
 
 /**
  * Commands set sent from driver to drawdy.
