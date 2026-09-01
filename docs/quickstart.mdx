@@ -149,7 +149,7 @@ manifest.json    the DriverManifest
 main.js          a single CommonJS bundle exporting `activate` and `onEvent`
 ```
 
-The bundle **must** be CommonJS with named exports — Drawdy instantiates it with `new Function("exports", "module", code)` and reads `module.exports.activate`. The starter's Rollup config emits exactly this; if you roll your own build, target `format: "cjs"` with `exports: "named"`.
+The bundle **must** be CommonJS with named exports — Drawdy loads it and reads its `activate` and `onEvent` exports. The starter's Rollup config emits exactly this; if you roll your own build, target `format: "cjs"` with `exports: "named"`.
 
 ## Learn from the examples
 

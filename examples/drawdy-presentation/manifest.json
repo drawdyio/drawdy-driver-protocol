@@ -1,0 +1,8 @@
+{
+    "driverId": "drawdy.presentation",
+    "driverName": "Presentation",
+    "driverVersion": "1",
+    "apiVersion": "1",
+    "description": "Fully-fledged presentation extension",
+    "main": "main.js"
+}
