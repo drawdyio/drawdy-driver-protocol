@@ -21,15 +21,6 @@ export type SubscribeableKey = keyof SubscribeableProperties;
 export type UpdateableProperties = Partial<{
     meta: Record<string, unknown>;
     locked: boolean;
-    localTransform: {
-        x: number;
-        y: number;
-        scale: number;
-        /**
-         * This is applied on top of the element's starting rotation.
-         */
-        rotation: number;
-    };
 }>;
 
 export type SubscribedDrawdyElement = DrawdyElement &
