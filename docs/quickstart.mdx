@@ -130,7 +130,27 @@ Every extension declares a `manifest.json`:
 npm run dev
 ```
 
-The starter runs a Vite dev server. On every save it rebuilds your extension and serves it at `/built.drawdyx`, exposing a `/version` endpoint that bumps on each build. Point Drawdy's development mode at the dev server URL; Drawdy polls `/version` and hot-reloads the driver whenever it changes.
+The starter runs a Vite dev server (`http://localhost:5173` by default — it prints the URL). On every save it rebuilds your extension, serves it at `/built.drawdyx`, and bumps a `/version` endpoint. Drawdy watches that endpoint and hot-reloads your driver on each build — no reinstall.
+
+### Point Drawdy at your dev server
+
+<Steps>
+  <Step title="Open a local board">
+    Development links work only on **local** boards, not cloud boards. Open or create a local workspace.
+  </Step>
+  <Step title="Add the dev server">
+    Open the command palette and run **Add extension dev server**. Enter your dev server URL, e.g. `http://localhost:5173` (a bare `localhost:5173` works too).
+  </Step>
+  <Step title="Edit and save">
+    Drawdy polls `<your-url>/version` every second, and when it changes it fetches `<your-url>/built.drawdyx` and reloads the driver in place.
+  </Step>
+</Steps>
+
+Remove a link with **Remove extension dev server** in the same palette. Links are stored per board in your browser, so each board keeps its own set. `ws://` and `wss://` URLs are accepted and normalized to `http`/`https`; the path is ignored, so only the host matters.
+
+<Note>
+  A cloud board never shows these commands — the extension host would have to trust an arbitrary local server, so hot reload is restricted to local boards you own.
+</Note>
 
 ## 5. Package for distribution
 

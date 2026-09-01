@@ -47,7 +47,7 @@ if (response.res.error) {
 }
 ```
 
-Two guarantees hold across the envelope: **every request resolves** (with a value or an error), and **requests are processed in the order Drawdy receives them**.
+Three guarantees hold across the envelope: **every request resolves** (with a value or an error), **requests are processed in the order Drawdy receives them**, and **each command is explicit** — it does exactly one thing, with no overloaded calls or hidden side effects.
 
 ## The driver module
 
