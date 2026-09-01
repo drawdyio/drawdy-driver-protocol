@@ -152,6 +152,31 @@ Remove a link with **Remove extension dev server** in the same palette. Links ar
   A cloud board never shows these commands — the extension host would have to trust an arbitrary local server, so hot reload is restricted to local boards you own.
 </Note>
 
+### Develop several extensions at once
+
+Nothing stops you running more than one at a time. Each dev link is an independent connection: Drawdy polls each one separately and installs the driver it serves under that driver's own `driverId`, so all of them live on the same board side by side.
+
+To add a second extension:
+
+<Steps>
+  <Step title="Run its dev server on a different port">
+    The starter pins port `5173` with `strictPort`, so a second `npm run dev` would fail on the same port. Start it on another port instead:
+
+    ```bash
+    npm run dev -- --port 5174
+    ```
+
+    (or change `server.port` in that extension's `vite.config.ts`).
+  </Step>
+  <Step title="Add a second dev server">
+    Run **Add extension dev server** again and enter the new URL, e.g. `http://localhost:5174`. The palette now lists a **Remove extension dev server** entry per link, so you can drop them one at a time.
+  </Step>
+</Steps>
+
+<Note>
+  Give each extension a distinct `driverId` in its `manifest.json`. Two dev servers serving the same `driverId` install over each other — Drawdy routes by `driverId`, so the id is what keeps them separate.
+</Note>
+
 ## 5. Package for distribution
 
 ```bash
