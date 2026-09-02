@@ -102,19 +102,31 @@ The declarative UI tree for floating elements. Layout primitives nest via `child
 
 ```ts
 type ElementSchema =
-    | { type: "button"; children?: ElementSchema[]; domId?: string; styles?: ElementSchemaStyles }
-    | { type: "box"; children?: ElementSchema[]; domId?: string; styles?: ElementSchemaStyles }
+    | {
+          type: "button";
+          children?: ElementSchema[];
+          domId?: string;
+          styles?: ElementSchemaStyles;
+      }
+    | {
+          type: "box";
+          children?: ElementSchema[];
+          domId?: string;
+          styles?: ElementSchemaStyles;
+      }
     | {
           type: "grid";
           children?: ElementSchema[];
           domId?: string;
-          styles?: ElementSchemaStyles & Partial<{ columns: number; gap: number }>;
+          styles?: ElementSchemaStyles &
+              Partial<{ columns: number; gap: number }>;
       }
     | {
           type: "column" | "row";
           children?: ElementSchema[];
           domId?: string;
-          styles?: ElementSchemaStyles & Partial<{ gap: number } & AlignmentStyles>;
+          styles?: ElementSchemaStyles &
+              Partial<{ gap: number } & AlignmentStyles>;
       }
     | {
           type: "text";
@@ -128,7 +140,12 @@ type ElementSchema =
                   textAlign: "start" | "center" | "end";
               }>;
       }
-    | { type: "image"; child: string; domId?: string; styles?: ElementSchemaStyles };
+    | {
+          type: "image";
+          child: string;
+          domId?: string;
+          styles?: ElementSchemaStyles;
+      };
 ```
 
 ```ts
@@ -204,7 +221,7 @@ type UpdateableProperties = Partial<{
 
 ## LocalAnimation
 
-A declarative, purely local animation. Setting it makes the element animate; the animation is **not** committed to the scene — it doesn't sync to collaborators or enter undo history, only its presence on the element does. Clear it with `null`.
+A declarative, purely local animation. Setting it makes the element animate; the animation is **not** committed to the scene — the animation is synced to collaborators as it's simply a property on an element, only its presence on the element does. Clear it with `null`.
 
 ```ts
 type AnimatedProp<T> = T[];
@@ -271,7 +288,13 @@ The style state of a built-in tool, returned by `scene:query-tool-state`.
 
 ```ts
 type ToolStyleState =
-    | { toolId: "text"; fontSize: number; color: string; textAlign?: TextAlign; opacity?: number }
+    | {
+          toolId: "text";
+          fontSize: number;
+          color: string;
+          textAlign?: TextAlign;
+          opacity?: number;
+      }
     | { toolId: "eraser"; size: number }
     | {
           toolId: "rect" | "circle" | "diamond";
@@ -282,15 +305,36 @@ type ToolStyleState =
           cornerRadius?: number;
           opacity?: number;
       }
-    | { toolId: "line" | "arrow"; strokeColor: string; strokeWidth: number; strokeDash?: StrokeDash; opacity?: number }
-    | { toolId: "pencil"; strokeColor: string; strokeWidth: number; opacity?: number }
+    | {
+          toolId: "line" | "arrow";
+          strokeColor: string;
+          strokeWidth: number;
+          strokeDash?: StrokeDash;
+          opacity?: number;
+      }
+    | {
+          toolId: "pencil";
+          strokeColor: string;
+          strokeWidth: number;
+          opacity?: number;
+      }
     | { toolId: "laser-pointer"; color: string; fadeDuration?: number };
 
 type StyleableToolId = ToolStyleState["toolId"];
 
 type ToolId =
-    | "select" | "drag" | "pencil" | "eraser" | "line" | "arrow"
-    | "text" | "rect" | "circle" | "diamond" | "image" | "laser-pointer";
+    | "select"
+    | "drag"
+    | "pencil"
+    | "eraser"
+    | "line"
+    | "arrow"
+    | "text"
+    | "rect"
+    | "circle"
+    | "diamond"
+    | "image"
+    | "laser-pointer";
 ```
 
 `StyleableToolId` is the subset of `ToolId` that `ToolStyleState` covers.
