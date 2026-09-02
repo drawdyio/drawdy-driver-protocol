@@ -1,9 +1,9 @@
 ---
 title: "Examples"
-description: "Four runnable drivers in the protocol repo, from a hello world to a full presentation tool, and the protocol surface each one uses."
+description: "Five runnable drivers in the protocol repo, from a hello world to a full presentation tool, and the protocol surface each one uses."
 ---
 
-The protocol repo ships four drivers under [`examples/`](https://github.com/drawdyio/drawdy-driver-protocol/tree/main/examples). Each is a Vite project with the same scripts: `dev` starts the dev server that Drawdy's development mode hot-reloads from, `build` packs `dist/<driver-id>.drawdyx` (dots in the id become dashes, so `drawdy.hello` builds `dist/drawdy-hello.drawdyx`), and `typecheck` runs `tsc`.
+The protocol repo ships five drivers under [`examples/`](https://github.com/drawdyio/drawdy-driver-protocol/tree/main/examples). Each is a Vite project with the same scripts: `dev` starts the dev server that Drawdy's development mode hot-reloads from, `build` packs `dist/<driver-id>.drawdyx` (dots in the id become dashes, so `drawdy.hello` builds `dist/drawdy-hello.drawdyx`), and `typecheck` runs `tsc`.
 
 From the repo root:
 
@@ -20,6 +20,20 @@ pnpm --filter drawdy-hello build   # writes examples/drawdy-hello/dist/drawdy-he
 </Card>
 
 Shows the smallest useful driver: [`subscription:scene:elements-added`](/protocol/subscriptions#scene-events), [`command:camera:get-info`](/protocol/commands#camera), and [`command:camera:fly-to-elements`](/protocol/commands#camera).
+
+## Bomb
+
+<Card title="drawdy-bomb" icon="bomb" href="https://github.com/drawdyio/drawdy-driver-protocol/tree/main/examples/drawdy-bomb">
+  `drawdy.bomb`: drag the bomb over your elements and drop to blow them up.
+</Card>
+
+Shows drag-and-drop driven by the protocol's own [`subscription:dom:drag`](/protocol/subscriptions#dom-events) rather than native browser drag, and [local animation](/protocol/data-types#localanimation) for the blast. Shows:
+
+- A scoped [`subscription:dom:drag`](/protocol/subscriptions#dom-events): armed on the [action button](/protocol/commands#dom) (`command:dom:create-action-button`), then re-scoped to the ring so the gesture keeps flowing while you drag it around.
+- A cursor-following overlay: `command:dom:create-floating-element` with `asPopover: false`, moved every tick with `command:dom:move-floating-element`, torn down with `command:dom:remove-floating-element` and `command:subscription:remove`.
+- Area hit-testing on drop: `command:camera:get-info`, `command:scene:query-rect`, `command:scene:element-rects`.
+- [Local animation](/protocol/data-types#localanimation): `command:scene:update-drawdy-elements` with a `LocalAnimation` that flings each element radially and spins it, then `command:scene:remove-drawdy-elements` once the blast finishes.
+- Also `command:tools:set-active`.
 
 ## Math Symbols
 
