@@ -8,6 +8,26 @@ type DriverElementCommon = {
     meta?: Record<string, any>;
 };
 
+export type LineBinding = {
+    drawdyElementId: string;
+    anchorX: number;
+    anchorY: number;
+};
+
+/**
+ * Either bind to an element or a position on the canvas. Never both
+ */
+type LineStart =
+    | { from: [number, number]; startBinding?: never }
+    | { from?: never; startBinding: LineBinding };
+
+/**
+ * Either bind to an element or a position on the canvas. Never both
+ */
+type LineEnd =
+    | { to: [number, number]; endBinding?: never }
+    | { to?: never; endBinding: LineBinding };
+
 export type DriverElement =
     | (DriverElementCommon & {
           type: "frame";
@@ -46,27 +66,22 @@ export type DriverElement =
       })
     | (DriverElementCommon & {
           type: "line";
-          from: [number, number];
-          to: [number, number];
-          /**
-           * Curve the line through one control point (quadratic) or several
-           * (through every bend, in order).
-           */
-          bend?: [number, number] | [number, number][];
+          bend?: Array<[number, number]>;
+          elbowRouting?: boolean;
           color: string;
           strokeWidth?: number;
           strokeDash?: StrokeDash;
-      })
+      } & LineStart &
+          LineEnd)
     | (DriverElementCommon & {
           type: "arrow";
-          from: [number, number];
-          to: [number, number];
-          /** Curve the shaft through one control point. */
-          bend?: [number, number];
+          bend?: Array<[number, number]>;
+          elbowRouting?: boolean;
           color: string;
           strokeWidth?: number;
           strokeDash?: StrokeDash;
-      })
+      } & LineStart &
+          LineEnd)
     | (DriverElementCommon & {
           type: "image";
           url: string;

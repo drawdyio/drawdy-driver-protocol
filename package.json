@@ -1,40 +1,40 @@
 {
-  "name": "@drawdy/driver-protocol",
-  "version": "0.1.0",
-  "license": "MIT",
-  "private": false,
-  "publishConfig": {
-    "access": "public"
-  },
-  "type": "module",
-  "packageManager": "pnpm@10.28.2",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/drawdyio/drawdy-driver-protocol.git"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+    "name": "@drawdy/driver-protocol",
+    "version": "0.1.1",
+    "license": "MIT",
+    "private": false,
+    "publishConfig": {
+        "access": "public"
+    },
+    "type": "module",
+    "packageManager": "pnpm@10.28.2",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/drawdyio/drawdy-driver-protocol.git"
+    },
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "typecheck": "tsc --noEmit",
+        "build": "tsc -p tsconfig.build.json",
+        "prepublishOnly": "npm run build",
+        "test": "jest --passWithNoTests",
+        "docs:dev": "pnpm --filter drawdy-driver-protocol-docs dev",
+        "docs:validate": "pnpm --filter drawdy-driver-protocol-docs validate"
+    },
+    "devDependencies": {
+        "@swc/jest": "^0.2.39",
+        "@types/jest": "^30.0.0",
+        "jest": "^30.0.0",
+        "typescript": "^5"
     }
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "typecheck": "tsc --noEmit",
-    "build": "tsc -p tsconfig.build.json",
-    "prepublishOnly": "npm run build",
-    "test": "jest --passWithNoTests",
-    "docs:dev": "pnpm --filter drawdy-driver-protocol-docs dev",
-    "docs:validate": "pnpm --filter drawdy-driver-protocol-docs validate"
-  },
-  "devDependencies": {
-    "@swc/jest": "^0.2.39",
-    "@types/jest": "^30.0.0",
-    "jest": "^30.0.0",
-    "typescript": "^5"
-  }
 }
