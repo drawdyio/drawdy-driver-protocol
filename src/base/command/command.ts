@@ -147,7 +147,7 @@ export type DriverCommand =
               schema: ElementSchema;
               /**
                * When true, clicking outside the element dismisses it — same
-               * effect as command:dom:remove-element. The driver is NOT
+               * effect as command:dom:remove-floating-element. The driver is NOT
                * notified; poll command:dom:element-rect if you need to know.
                * Defaults to false.
                *
@@ -162,14 +162,14 @@ export type DriverCommand =
           { created: boolean }
       >
     | ProtocolCommand<
-          "command:dom:remove-element",
+          "command:dom:remove-floating-element",
           {
               domId: string;
           },
           { removed: boolean }
       >
     | ProtocolCommand<
-          "command:dom:move-element",
+          "command:dom:move-floating-element",
           {
               domId: string;
               position: { x: number; y: number };

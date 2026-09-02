@@ -382,7 +382,7 @@ export const onEvent: DriverModule["onEvent"] = async (e) => {
 
             if (clickedId === pickerCloseButtonId(driver.manifest.driverId)) {
                 await driver.issueCommand({
-                    type: "command:dom:remove-element",
+                    type: "command:dom:remove-floating-element",
                     driverId: driver.manifest.driverId,
                     requestId: String(requestId++),
                     req: {

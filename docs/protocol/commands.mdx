@@ -263,11 +263,11 @@ req: {
 }
 res: { created: boolean }
 
-"command:dom:remove-element"
+"command:dom:remove-floating-element"
 req: { domId: string }
 res: { removed: boolean }
 
-"command:dom:move-element"
+"command:dom:move-floating-element"
 req: { domId: string; position: { x: number; y: number } }
 res: { moved: boolean }
 
@@ -286,8 +286,8 @@ res: { exited: boolean }
 ```
 
 - `create-action-button` currently accepts `svg` only; other formats may come later.
-- `create-floating-element`'s `position` is a fixed position in the DOM. When `barrierDismissible` is true, clicking outside dismisses it (same effect as `dom:remove-element`); the driver is **not** notified — poll `dom:element-rect` if you need to know. Defaults to false. `asPopover` defaults to true (a collision-aware popover near `position`); set it to false to render at exactly `position` as a click-through overlay — clicks pass to the canvas — for a cursor-following decoration.
-- `move-element` repositions an existing floating element by `domId` — cheaper than remove + recreate, e.g. an overlay that follows the cursor. `moved` is false when no element has that `domId`.
+- `create-floating-element`'s `position` is a fixed position in the DOM. When `barrierDismissible` is true, clicking outside dismisses it (same effect as `dom:remove-floating-element`); the driver is **not** notified — poll `dom:element-rect` if you need to know. Defaults to false. `asPopover` defaults to true (a collision-aware popover near `position`); set it to false to render at exactly `position` as a click-through overlay — clicks pass to the canvas — for a cursor-following decoration.
+- `move-floating-element` repositions an existing floating element by `domId` — cheaper than remove + recreate, e.g. an overlay that follows the cursor. `moved` is false when no element has that `domId`.
 - `enter-fullscreen` returns `entered: false` when the browser refused or doesn't support it; `exit-fullscreen` returns `exited: false` when the document wasn't fullscreen.
 
 ## Webviews

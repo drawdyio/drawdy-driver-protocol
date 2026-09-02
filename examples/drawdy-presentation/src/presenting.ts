@@ -139,7 +139,7 @@ export class PresentingController {
             await this._restoreTool();
         }
         await this._args.issueCommand({
-            type: "command:dom:remove-element",
+            type: "command:dom:remove-floating-element",
             driverId: this._args.driverId,
             requestId: this._args.nextRequestId(),
             req: { domId: deckDomId(this._args.driverId) },
@@ -200,7 +200,7 @@ export class PresentingController {
 
     private async _recreateDeck(): Promise<void> {
         await this._args.issueCommand({
-            type: "command:dom:remove-element",
+            type: "command:dom:remove-floating-element",
             driverId: this._args.driverId,
             requestId: this._args.nextRequestId(),
             req: { domId: deckDomId(this._args.driverId) },

@@ -62,7 +62,7 @@ export async function handleSlidePresetAdd({
     // The slide is placed; the picker's job is done.
     await issueCommand({
         driverId,
-        type: "command:dom:remove-element",
+        type: "command:dom:remove-floating-element",
         req: { domId: pickerDomId(driverId) },
         requestId: String(requestId.getAndBump()),
     });
