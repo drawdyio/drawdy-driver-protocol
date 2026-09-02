@@ -356,7 +356,7 @@ export type DriverCommand =
           "command:tools:emulate-pointer",
           {
               points: Array<[number, number]>;
-              interpMethod: "linear" | "catmullrom";
+              interpMethod: "linear" | "catmull";
           },
           undefined
       >
