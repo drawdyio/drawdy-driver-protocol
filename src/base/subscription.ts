@@ -1,5 +1,8 @@
 import { DistributiveOmit, ProtocolCommand } from "./base";
-import { SubscribeableKey, SubscribedDrawdyElement } from "./dom-element-schema";
+import {
+    SubscribeableKey,
+    SubscribedDrawdyElement,
+} from "./drawdy-element-schema";
 import { ModuleStyling } from "./styling";
 
 /**

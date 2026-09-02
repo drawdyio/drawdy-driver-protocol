@@ -8,7 +8,7 @@ description: "DrawdyElementSchema, DomElementSchema, element properties, ModuleS
 The elements you add to the canvas with `scene:add-drawdy-elements` and preview commands. All variants share a common base:
 
 ```ts
-type DriverElementCommon = {
+type DrawdyElementCommon = {
     drawdyElementId: string;
     layer?: number;
     meta?: Record<string, any>;
@@ -28,7 +28,7 @@ type LineEndpoints = (
 
 ```ts
 type DrawdyElementSchema =
-    | (DriverElementCommon & {
+    | (DrawdyElementCommon & {
           type: "frame";
           position: [number, number];
           width: number;
@@ -36,14 +36,14 @@ type DrawdyElementSchema =
           rotation: number;
           meta: Record<string, any>;
       })
-    | (DriverElementCommon & {
+    | (DrawdyElementCommon & {
           type: "freedraw";
           points: number[];
           width: number;
           height: number;
           meta: Record<string, any>;
       })
-    | (DriverElementCommon & {
+    | (DrawdyElementCommon & {
           type: "shape";
           componentType?: "rect" | "circle" | "diamond";
           x: number;
@@ -61,7 +61,7 @@ type DrawdyElementSchema =
           textAlign?: TextAlign;
           textVerticalAlign?: "top" | "middle" | "bottom";
       })
-    | (DriverElementCommon & {
+    | (DrawdyElementCommon & {
           type: "line";
           bend?: Array<[number, number]>;
           elbowRouting?: boolean;
@@ -69,7 +69,7 @@ type DrawdyElementSchema =
           strokeWidth?: number;
           strokeDash?: StrokeDash;
       } & LineEndpoints)
-    | (DriverElementCommon & {
+    | (DrawdyElementCommon & {
           type: "arrow";
           bend?: [number, number];
           elbowRouting?: boolean;
@@ -77,7 +77,7 @@ type DrawdyElementSchema =
           strokeWidth?: number;
           strokeDash?: StrokeDash;
       } & LineEndpoints)
-    | (DriverElementCommon & {
+    | (DrawdyElementCommon & {
           type: "image";
           url: string;
           x: number;
@@ -85,7 +85,7 @@ type DrawdyElementSchema =
           width: number;
           height: number;
       })
-    | (DriverElementCommon & {
+    | (DrawdyElementCommon & {
           type: "text";
           x: number;
           y: number;
@@ -95,6 +95,14 @@ type DrawdyElementSchema =
           fontSize: number;
           color: string;
           textAlign?: TextAlign;
+      })
+    | (Omit<DrawdyElementCommon, "layer"> & {
+          type: "component";
+          x: number;
+          y: number;
+          width: number;
+          height: number;
+          schema: DomElementSchema;
       });
 ```
 
@@ -103,6 +111,7 @@ type DrawdyElementSchema =
 - Each end of a line or arrow is set **either** by an explicit coordinate (`from` / `to`) **or** by a `LineBinding` (`startBinding` / `endBinding`) — the two are mutually exclusive per end, so you can pin one end and bind the other. A `LineBinding` attaches that end to `elementId` at the normalized anchor (`anchorX`, `anchorY`, each `0`–`1` across the target's bounding box); the end then follows that element as it moves. Bindings resolve against elements already on the canvas and elements created earlier in the same `add-drawdy-elements` batch.
 - `elbowRouting` routes the line or arrow orthogonally between its two ends instead of straight; `bend` is ignored when it is set.
 - `text.width`/`height` are optional and can be measured later.
+- `component` embeds a live [`DomElementSchema`](#domelementschema) UI tree at `(x, y)` on the canvas — the same declarative schema used for floating elements, but committed as a scene element that pans and zooms with the board.
 
 ## DomElementSchema
 

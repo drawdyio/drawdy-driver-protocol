@@ -1,12 +1,12 @@
 import { DistributiveOmit, ProtocolCommand } from "../base";
 import { ContextMenu } from "../context-menu";
-import { DrawdyElementSchema } from "../drawdy-element-schema";
+import { DomElementSchema } from "../dom-element-schema";
 import {
-    DomElementSchema,
+    DrawdyElementSchema,
     SubscribeableKey,
     SubscribedDrawdyElement,
     UpdateableProperties,
-} from "../dom-element-schema";
+} from "../drawdy-element-schema";
 import { ScenePreviewCommand } from "../preview";
 import { DriverSubscription } from "../subscription";
 import { StyleableToolId, ToolStyleState } from "../tool-state";
