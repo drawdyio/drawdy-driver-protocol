@@ -15,7 +15,7 @@ All drivers share that one worker. `Driver1`, `Driver2`, `Driver3`… sit side b
 
 ### The trust model
 
-Drivers are **not** sandboxed from one another inside the worker. They share a thread, so in principle one driver can observe or interfere with another. We close that gap the same way editors like VS Code do: **every driver is reviewed before it can be published**, and you install drivers the way you trust any extension — from a source that vouches for them. It's a trust model, not a sandbox, and it's the right trade: the shared worker is what keeps drivers fast, lets them cooperate on the same scene, and keeps the protocol small. Reach for a webview whenever you want isolation on top of that trust.
+Drivers are **not** sandboxed from one another inside the worker. They share a thread, so in principle one driver can observe or interfere with another. **Every driver is reviewed before it can be published**. But the best line of defence here is you. You install drivers the way you trust any extension — from a source that vouches for them. It's a trust model, not a sandbox. The shared worker is what keeps drivers fast, lets them cooperate on the same scene, and keeps the protocol small. Reach for a webview whenever you want custom ui, or an isolation on top of that trust.
 
 ## The envelope
 
