@@ -205,12 +205,8 @@ res: { state: ToolStyleState | null }
 
 "command:tools:emulate-pointer"
 req: {
-    actions: Array<
-        | { kind: "down"; point: [number, number]; pressure?: number }
-        | { kind: "move"; point: [number, number]; pressure?: number }
-        | { kind: "up"; point: [number, number] }
-        | { kind: "cancel" }
-    >;
+    points: Array<[number, number]>;
+    interpMethod: "linear" | "catmullrom";
 }
 ```
 

@@ -355,12 +355,8 @@ export type DriverCommand =
     | ProtocolCommand<
           "command:tools:emulate-pointer",
           {
-              actions: Array<
-                  | { kind: "down"; point: [number, number]; pressure?: number }
-                  | { kind: "move"; point: [number, number]; pressure?: number }
-                  | { kind: "up"; point: [number, number] }
-                  | { kind: "cancel" }
-              >;
+              points: Array<[number, number]>;
+              interpMethod: "linear" | "catmullrom";
           },
           undefined
       >
