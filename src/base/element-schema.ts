@@ -72,6 +72,7 @@ export type ElementSchemaBaseStyles = Partial<{
     borderWidth: Dimension;
     borderRadius: Dimension;
     overflow: "visible" | "hidden" | "clip" | "scroll" | "auto";
+    pointerEvents: "auto" | "none";
 }>;
 
 export type ElementSchemaStyles = ElementSchemaBaseStyles & {

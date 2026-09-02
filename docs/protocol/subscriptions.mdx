@@ -95,11 +95,19 @@ The `properties` you pass when subscribing to element events select which fields
 ## Camera events
 
 ```ts
-"subscription:camera:moved-rapid"
-body: { x: number; y: number; zoom: number }
+"subscription:camera:moved-rapid";
+body: {
+    x: number;
+    y: number;
+    zoom: number;
+}
 
-"subscription:camera:moved-debounced"
-body: { x: number; y: number; zoom: number }
+("subscription:camera:moved-debounced");
+body: {
+    x: number;
+    y: number;
+    zoom: number;
+}
 ```
 
 `moved-rapid` fires continuously during movement; `moved-debounced` fires once movement settles.
@@ -107,38 +115,81 @@ body: { x: number; y: number; zoom: number }
 ## DOM events
 
 ```ts
-"subscription:dom:element-clicked"
-req:  { domElementId: string }
-body: { domElementId: string; clientX: number; clientY: number }
+"subscription:dom:element-clicked";
+req: {
+    domElementId: string;
+}
+body: {
+    domElementId: string;
+    clientX: number;
+    clientY: number;
+}
 
-"subscription:dom:theme-changed"
-body: { styling: ModuleStyling }
+("subscription:dom:theme-changed");
+body: {
+    styling: ModuleStyling;
+}
 
-"subscription:dom:fullscreen-changed"
-body: { fullscreen: boolean }
+("subscription:dom:fullscreen-changed");
+body: {
+    fullscreen: boolean;
+}
 
-"subscription:dom:screen-resized"
-body: { width: number; height: number }
+("subscription:dom:screen-resized");
+body: {
+    width: number;
+    height: number;
+}
+
+("subscription:dom:drag");
+req: {
+    domElementId: string;
+}
+body: {
+    type: "dragStart" | "dragging" | "dragEnd";
+    domElementId: string;
+    position: {
+        canvasSpace: {
+            x: number;
+            y: number;
+        }
+        domSpace: {
+            x: number;
+            y: number;
+        }
+    }
+}
 ```
 
 `theme-changed` delivers the updated [`ModuleStyling`](/protocol/data-types#modulestyling) whenever the user switches theme.
 
+`drag` is **scoped to the element you name in `req.domElementId`**: it fires only for gestures that **start on that element** (the drag is tracked document-wide and its start element latched for the whole gesture, so events keep coming even after the pointer leaves — e.g. while you drag a floating element around). One `dragStart` on pointer-down, a `dragging` per move while held, one `dragEnd` on pointer-up. It is synthesized from raw pointer events rather than the browser's native drag, so it fires reliably. Each event's `domElementId` echoes the element the gesture started on. `position` carries both coordinate spaces: `domSpace` (screen/client pixels, for `command:dom:move-element`) and `canvasSpace` (world coordinates, ready to use). Grab a floating element by giving its `create-floating-element` `schema` `pointerEvents: "auto"` so it receives the pointer-down.
+
 ## Webview events
 
 ```ts
-"subscription:webview:message"
-req:  { webviewDomId: string }
-body: { webviewDomId: string; message: unknown }
+"subscription:webview:message";
+req: {
+    webviewDomId: string;
+}
+body: {
+    webviewDomId: string;
+    message: unknown;
+}
 ```
 
 ## Input events
 
 ```ts
-"subscription:context-menu:clicked"
-req:  { menuId: string }
-body: { menuId: string }
+"subscription:context-menu:clicked";
+req: {
+    menuId: string;
+}
+body: {
+    menuId: string;
+}
 
-"subscription:keyboard:control-keys"
+("subscription:keyboard:control-keys");
 body: {
     key: ControlKey;
     shift: boolean;
@@ -150,7 +201,15 @@ body: {
 
 ```ts
 type ControlKey =
-    | "tab" | "enter" | "shift" | "escape" | "space"
-    | "backspace" | "delete"
-    | "arrow-up" | "arrow-down" | "arrow-left" | "arrow-right";
+    | "tab"
+    | "enter"
+    | "shift"
+    | "escape"
+    | "space"
+    | "backspace"
+    | "delete"
+    | "arrow-up"
+    | "arrow-down"
+    | "arrow-left"
+    | "arrow-right";
 ```

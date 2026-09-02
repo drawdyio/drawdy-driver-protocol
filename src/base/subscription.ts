@@ -55,6 +55,12 @@ export type DriverSubscription =
     | ProtocolSubscription<"subscription:dom:fullscreen-changed", undefined>
     | ProtocolSubscription<"subscription:dom:screen-resized", undefined>
     | ProtocolSubscription<
+          "subscription:dom:drag",
+          {
+              domElementId: string;
+          }
+      >
+    | ProtocolSubscription<
           "subscription:webview:message",
           {
               webviewDomId: string;
@@ -158,6 +164,17 @@ export type DriverSubscriptionEvent =
           {
               width: number;
               height: number;
+          }
+      >
+    | ProtocolSubscriptionEvent<
+          "subscription:dom:drag",
+          {
+              type: "dragStart" | "dragging" | "dragEnd";
+              domElementId: string;
+              position: {
+                  canvasSpace: { x: number; y: number };
+                  domSpace: { x: number; y: number };
+              };
           }
       >
     | ProtocolSubscriptionEvent<

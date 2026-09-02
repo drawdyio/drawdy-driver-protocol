@@ -151,6 +151,7 @@ type ElementSchemaBaseStyles = Partial<{
     borderWidth: Dimension;
     borderRadius: Dimension;
     overflow: "visible" | "hidden" | "clip" | "scroll" | "auto";
+    pointerEvents: "auto" | "none";
 }>;
 
 type ElementSchemaStyles = ElementSchemaBaseStyles & {
@@ -159,6 +160,8 @@ type ElementSchemaStyles = ElementSchemaBaseStyles & {
 ```
 
 For `image`, `child` is the image URL and may be an SVG string. `domId` gives an element a handle you can target with DOM commands and click subscriptions.
+
+A **ring** or other circular shape is just a `box` with `borderRadius: [50, "%"]` — no dedicated type. `backgroundColor` accepts a CSS gradient (e.g. `radial-gradient(circle, ...)`), so a soft glowing disc is a single box. Create it with [`command:dom:create-floating-element`](/protocol/commands#dom) and `asPopover: false` to render it at its exact `position` (rather than as a collision-aware popover). `pointerEvents` then decides interactivity: `"none"` makes it a click-through decoration that follows the cursor without blocking the canvas; `"auto"` makes it grabbable, so [`subscription:dom:drag`](/protocol/subscriptions#dom-events) scoped to its id reports drags on it.
 
 ## Element properties
 
@@ -193,16 +196,44 @@ Updates are a partial patch:
 type UpdateableProperties = Partial<{
     meta: Record<string, unknown>;
     locked: boolean;
-    localTransform: {
-        x: number;
-        y: number;
-        scale: number;
-        rotation: number;
-    };
+    localAnimation: LocalAnimation | null;
 }>;
 ```
 
-`meta` merges into existing meta; `localTransform.rotation` is applied on top of the element's starting rotation.
+`meta` merges into existing meta. `localAnimation` attaches (or, when `null`, clears) a declarative animation on the element.
+
+## LocalAnimation
+
+A declarative, purely local animation. Setting it makes the element animate; the animation is **not** committed to the scene — it doesn't sync to collaborators or enter undo history, only its presence on the element does. Clear it with `null`.
+
+```ts
+type AnimatedProp<T> = T[];
+
+type LocalAnimationTransform = Partial<{
+    x: AnimatedProp<number>;
+    y: AnimatedProp<number>;
+    width: AnimatedProp<number>;
+    height: AnimatedProp<number>;
+    rotation: AnimatedProp<number>;
+    opacity: AnimatedProp<number>;
+}>;
+
+type LocalAnimation = {
+    time: {
+        durationMs: number;
+        curve: "linear" | "ease-in-out";
+        repeat: "none" | "ping-pong";
+    };
+    animation: {
+        transform: LocalAnimationTransform;
+        curve: "linear" | "catmull";
+    };
+};
+```
+
+- `time.durationMs` is the length of one cycle. `time.curve` eases the time progress before it samples the tracks. `time.repeat` is `"none"` (play once, then hold the final frame) or `"ping-pong"` (bounce 0 → 1 → 0 forever).
+- Each `transform` field is a **keyframe track** — an array of values sampled across the (eased) progress. `x`/`y` translate in canvas units; `width`/`height` are scale multipliers about the element's center; `rotation` is radians about its center; `opacity` multiplies its alpha. Omitted fields hold their rest value.
+- `animation.curve` is how keyframes interpolate: `"linear"` between values, or `"catmull"` for a smooth spline through them.
 
 ## ModuleStyling
 

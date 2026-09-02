@@ -150,8 +150,14 @@ export type DriverCommand =
                * effect as command:dom:remove-element. The driver is NOT
                * notified; poll command:dom:element-rect if you need to know.
                * Defaults to false.
+               *
+               * I might add a notification subscription in the future.
                */
               barrierDismissible?: boolean;
+              /**
+               * IF true, it avoids collision like a popover
+               */
+              asPopover?: boolean;
           },
           { created: boolean }
       >
@@ -161,6 +167,14 @@ export type DriverCommand =
               domId: string;
           },
           { removed: boolean }
+      >
+    | ProtocolCommand<
+          "command:dom:move-element",
+          {
+              domId: string;
+              position: { x: number; y: number };
+          },
+          { moved: boolean }
       >
     | ProtocolCommand<
           "command:scene:add-drawdy-elements",
