@@ -5,6 +5,18 @@ description: "The message envelope, the driver module contract, and the manifest
 
 The Drawdy Driver Protocol is the message envelope, the driver module contract, every command and subscription, and the data types they carry. All of it is exported as types from `@drawdy/driver-protocol`. This page covers the envelope, the module, and the manifest.
 
+## Where your driver runs
+
+![The driver process](/protocol/driver-process.png)
+
+Drawdy keeps the canvas on the main thread and runs drivers off it. The main thread holds the **scene** and a thin **driver host**; every driver runs inside a single shared **worker thread** (`host-worker`). Your `activate` and `onEvent` execute there. This is deliberate: a driver doing real work never blocks a frame, so the canvas stays smooth no matter what an extension is doing. The host and the worker talk only through the protocol envelope — the [commands](/protocol/commands) and [subscriptions](/protocol/subscriptions) in this reference are the entire surface between them.
+
+All drivers share that one worker. `Driver1`, `Driver2`, `Driver3`… sit side by side in the same context. When you need a hard boundary — third-party HTML, untrusted markup, a heavy embedded UI — spawn a [webview](/protocol/webview-api). Webviews run in an `iframe` on a separate origin and their own process, so they get real origin and process isolation from your driver and from each other.
+
+### The trust model
+
+Drivers are **not** sandboxed from one another inside the worker. They share a thread, so in principle one driver can observe or interfere with another. We close that gap the same way editors like VS Code do: **every driver is reviewed before it can be published**, and you install drivers the way you trust any extension — from a source that vouches for them. It's a trust model, not a sandbox, and it's the right trade: the shared worker is what keeps drivers fast, lets them cooperate on the same scene, and keeps the protocol small. Reach for a webview whenever you want isolation on top of that trust.
+
 ## The envelope
 
 Every message — command or subscription — is a `ProtocolCommand`:
