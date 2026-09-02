@@ -28,7 +28,10 @@ The protocol package is **types only** — it ships no runtime code. You import 
 A driver exports `activate` and `onEvent`. Here is a complete extension that adds a context-menu item, and each time it is clicked drops a sticky note on the canvas and flies the camera to it:
 
 ```ts
-import type { DriverCommandIssuer, DriverModule } from "@drawdy/driver-protocol";
+import type {
+    DriverCommandIssuer,
+    DriverModule,
+} from "@drawdy/driver-protocol";
 
 const MENU_ID = "starter:add-note";
 
@@ -115,8 +118,6 @@ Every extension declares a `manifest.json`:
 {
     "driverId": "drawdy.my-extension",
     "driverName": "My Extension",
-    "driverVersion": "0.1.0",
-    "apiVersion": "1",
     "description": "A Drawdy extension.",
     "main": "main.js"
 }
@@ -149,7 +150,9 @@ The starter runs a Vite dev server (`http://localhost:5173` by default — it pr
 Remove a link with **Remove extension dev server** in the same palette. Links are stored per board in your browser, so each board keeps its own set. `ws://` and `wss://` URLs are accepted and normalized to `http`/`https`; the path is ignored, so only the host matters.
 
 <Note>
-  A cloud board never shows these commands — the extension host would have to trust an arbitrary local server, so hot reload is restricted to local boards you own.
+    A cloud board never shows these commands — the extension host would have to
+    trust an arbitrary local server, so hot reload is restricted to local boards
+    you own.
 </Note>
 
 ### Develop several extensions at once
@@ -167,6 +170,7 @@ To add a second extension:
     ```
 
     (or change `server.port` in that extension's `vite.config.ts`).
+
   </Step>
   <Step title="Add a second dev server">
     Run **Add extension dev server** again and enter the new URL, e.g. `http://localhost:5174`. The palette now lists a **Remove extension dev server** entry per link, so you can drop them one at a time.
@@ -174,7 +178,9 @@ To add a second extension:
 </Steps>
 
 <Note>
-  Give each extension a distinct `driverId` in its `manifest.json`. Two dev servers serving the same `driverId` install over each other — Drawdy routes by `driverId`, so the id is what keeps them separate.
+    Give each extension a distinct `driverId` in its `manifest.json`. Two dev
+    servers serving the same `driverId` install over each other — Drawdy routes
+    by `driverId`, so the id is what keeps them separate.
 </Note>
 
 ## 5. Package for distribution

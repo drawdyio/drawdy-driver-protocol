@@ -39,6 +39,28 @@ Dispatch on `event.type`, read `event.body`, and unsubscribe with [`command:subs
 
 Each subscription topic below lists its request (the `subscription:*` `req`) and the `body` of the event it delivers.
 
+## Typing a subscription
+
+Same `Extract` pattern as commands — `SubscriptionCommand` for the subscribe request, `DriverSubscriptionEvent` for the event it delivers:
+
+```ts
+import type {
+    SubscriptionCommand,
+    DriverSubscriptionEvent,
+} from "@drawdy/driver-protocol";
+
+type PointerReq = Extract<
+    SubscriptionCommand,
+    { type: "subscription:scene:pointer" }
+>;
+type PointerEvent = Extract<
+    DriverSubscriptionEvent,
+    { type: "subscription:scene:pointer" }
+>;
+```
+
+`PointerReq` carries `req` (here `{ elementIds? }`); `PointerEvent` carries `body`.
+
 ## Scene events
 
 ```ts

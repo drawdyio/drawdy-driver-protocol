@@ -265,8 +265,6 @@ export type ProtocolSubscriptionEvent<T, BODY> = {
 
 export type SubscriptionCommand = DistributiveOmit<DriverSubscription, "res">;
 
-export type SubscriptionEvent = DriverSubscriptionEvent;
-
 // =================================================== type assertions below.
 
 type ExtractTopic<T> =

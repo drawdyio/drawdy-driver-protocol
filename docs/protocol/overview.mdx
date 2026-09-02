@@ -71,10 +71,10 @@ type DriverCommandIssuer = <R extends DriverCommandRequest>(
 ```
 
 - **`activate`** runs once when Drawdy loads the driver. Use it to register menus, panels, and subscriptions, and to issue any startup commands.
-  - **`issueCommand`** sends a command and resolves to its typed response.
-  - **`manifest`** is the registered [manifest](#manifest).
-  - **`styling`** is the current theme — see [`ModuleStyling`](/protocol/data-types#modulestyling).
-  - **`generateId`** mints ids for canvas elements you create.
+    - **`issueCommand`** sends a command and resolves to its typed response.
+    - **`manifest`** is the registered [manifest](#manifest).
+    - **`styling`** is the current theme — see [`ModuleStyling`](/protocol/data-types#modulestyling).
+    - **`generateId`** mints ids for canvas elements you create.
 - **`onEvent`** receives every [subscription event](/protocol/subscriptions) your driver is registered for.
 
 ## Manifest
@@ -84,13 +84,12 @@ interface DriverManifest {
     driverId: string;
     driverName: string;
     driverVersion: string;
-    apiVersion: string;
     description?: string;
     main: string;
 }
 ```
 
-`main` is the entry bundle filename inside the `.drawdyx` zip. The host confirms the manifest on load; an invalid id, missing capability, or wrong `apiVersion` lets the host decide how to proceed.
+`main` is the entry bundle filename inside the `.drawdyx` zip.
 
 ## In this section
 

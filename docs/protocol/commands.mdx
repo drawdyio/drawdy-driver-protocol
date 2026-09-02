@@ -5,6 +5,26 @@ description: "Every command a driver can issue to Drawdy, with its request and r
 
 Commands flow from the driver to Drawdy. Each entry below lists the `type`, its request `req`, and its response `res.value`. A dash means none.
 
+## Typing a command
+
+Every command is a member of a discriminated union keyed by `type`, so you can pull a single command's request or response out with `Extract`:
+
+```ts
+import type {
+    DriverCommandRequest,
+    DriverCommandResponse,
+} from "@drawdy/driver-protocol";
+
+type FlyToRectRequest = Extract<
+    DriverCommandRequest,
+    { type: "command:camera:fly-to-rect" }
+>;
+type CameraInfoResponse = Extract<
+    DriverCommandResponse,
+    { type: "command:camera:get-info" }
+>;
+```
+
 ## Camera
 
 ```ts
@@ -144,12 +164,18 @@ See [`PreviewTransform`](/protocol/data-types#previewtransform).
 ## Scene: text editing
 
 ```ts
-"command:scene:cancel-text-edit"
-res: { cancelled: boolean }
+"command:scene:cancel-text-edit";
+res: {
+    cancelled: boolean;
+}
 
-"command:scene:update-text-edit"
-req: { text: string }
-res: { updated: boolean }
+("command:scene:update-text-edit");
+req: {
+    text: string;
+}
+res: {
+    updated: boolean;
+}
 ```
 
 `update-text-edit` replaces the text of the active text edit in place, keeping the editor open so the user can keep typing. `updated` is `false` when no text edit is in progress.
@@ -193,13 +219,19 @@ See [`ToolId`](/protocol/data-types#toolstylestate), [`StyleableToolId`](/protoc
 ## Context menus
 
 ```ts
-"command:context-menu:add"
-req: ContextMenu
-res: { added: boolean }
+"command:context-menu:add";
+req: ContextMenu;
+res: {
+    added: boolean;
+}
 
-"command:context-menu:remove"
-req: { menuId: string }
-res: { removed: boolean }
+("command:context-menu:remove");
+req: {
+    menuId: string;
+}
+res: {
+    removed: boolean;
+}
 ```
 
 ```ts
@@ -314,16 +346,20 @@ res: { deleted: boolean }
 ## History
 
 ```ts
-"command:history:undo"
-"command:history:redo"
+"command:history:undo";
+"command:history:redo";
 ```
 
 ## Subscription management
 
 ```ts
-"command:subscription:remove"
-req: { subscriptionId: string }
-res: { removed: boolean }
+"command:subscription:remove";
+req: {
+    subscriptionId: string;
+}
+res: {
+    removed: boolean;
+}
 ```
 
 Pass the `subscriptionId` you received when you set the subscription up. See [Subscriptions](/protocol/subscriptions).
