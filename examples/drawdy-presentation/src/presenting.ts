@@ -1,6 +1,6 @@
 import {
     DriverCommandIssuer,
-    ElementSchema,
+    DomElementSchema,
     ModuleStyling,
 } from "@drawdy/driver-protocol";
 import { toDataUri } from "./slide-presets";
@@ -223,7 +223,7 @@ export class PresentingController {
         });
     }
 
-    private _deckSchema(): ElementSchema {
+    private _deckSchema(): DomElementSchema {
         const styling = this._args.getStyling();
         const driverId = this._args.driverId;
 
@@ -231,7 +231,7 @@ export class PresentingController {
             domId: string,
             icon: keyof typeof ICONS,
             active = false
-        ): ElementSchema => ({
+        ): DomElementSchema => ({
             type: "button",
             domId,
             styles: {
@@ -256,7 +256,7 @@ export class PresentingController {
             ],
         });
 
-        const divider: ElementSchema = {
+        const divider: DomElementSchema = {
             type: "box",
             styles: {
                 width: [1, "px"],

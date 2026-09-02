@@ -1,6 +1,6 @@
 import {
     DriverCommandIssuer,
-    ElementSchema,
+    DomElementSchema,
     ModuleStyling,
 } from "@drawdy/driver-protocol";
 import { slidePresets, toDataUri } from "./slide-presets";
@@ -91,8 +91,8 @@ export async function handleSlidePresetOpen({
     }
 }
 
-function pickerSchema(driverId: string, styling: ModuleStyling): ElementSchema {
-    const slides: ElementSchema[] = slidePresets(styling).map((preset) => ({
+function pickerSchema(driverId: string, styling: ModuleStyling): DomElementSchema {
+    const slides: DomElementSchema[] = slidePresets(styling).map((preset) => ({
         type: "button",
         domId: presetButtonId(driverId, preset.id),
         styles: {

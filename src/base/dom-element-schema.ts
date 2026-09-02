@@ -81,22 +81,22 @@ export type ElementSchemaStyles = ElementSchemaBaseStyles & {
 
 export type FontWeight = "normal" | "medium" | "semibold" | "bold";
 
-export type ElementSchema =
+export type DomElementSchema =
     | {
           type: "button";
-          children?: ElementSchema[];
+          children?: DomElementSchema[];
           domId?: string;
           styles?: ElementSchemaStyles;
       }
     | {
           type: "box";
-          children?: ElementSchema[];
+          children?: DomElementSchema[];
           domId?: string;
           styles?: ElementSchemaStyles;
       }
     | {
           type: "grid";
-          children?: ElementSchema[];
+          children?: DomElementSchema[];
           domId?: string;
           styles?: ElementSchemaStyles &
               Partial<{
@@ -106,7 +106,7 @@ export type ElementSchema =
       }
     | {
           type: "column" | "row";
-          children?: ElementSchema[];
+          children?: DomElementSchema[];
           domId?: string;
           styles?: ElementSchemaStyles &
               Partial<

@@ -28,7 +28,7 @@ type LineEnd =
     | { to: [number, number]; endBinding?: never }
     | { to?: never; endBinding: LineBinding };
 
-export type DriverElement =
+export type DrawdyElementSchema =
     | (DriverElementCommon & {
           type: "frame";
           position: [number, number];

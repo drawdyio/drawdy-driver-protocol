@@ -1,4 +1,4 @@
-import { StrokeDash, TextAlign } from "./driver-element";
+import { StrokeDash, TextAlign } from "./drawdy-element-schema";
 
 export type ToolStyleState =
     | {

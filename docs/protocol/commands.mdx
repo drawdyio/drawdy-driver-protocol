@@ -59,7 +59,7 @@ res: { rect: { x: number; y: number; width: number; height: number } }
 
 ```ts
 "command:scene:add-drawdy-elements"
-req: { elements: DriverElement[] }
+req: { elements: DrawdyElementSchema[] }
 res: { added: boolean }
 
 "command:scene:remove-drawdy-elements"
@@ -112,7 +112,7 @@ req: { area: { x: number; y: number; width: number; height: number } }
 res: { png: Blob }
 ```
 
-- `line` and `arrow` elements can bind either end to another element instead of a fixed point — see [`LineBinding`](/protocol/data-types#driverelement). Bindings resolve against elements already on the canvas and ones created earlier in the same `add-drawdy-elements` batch, so add the targets before the connector.
+- `line` and `arrow` elements can bind either end to another element instead of a fixed point — see [`LineBinding`](/protocol/data-types#drawdyelementschema). Bindings resolve against elements already on the canvas and ones created earlier in the same `add-drawdy-elements` batch, so add the targets before the connector.
 - When updating, `meta` is **merged** into the element's existing meta; every other property is set as given. See [`UpdateableProperties`](/protocol/data-types#element-properties).
 - `query-combined-rect` returns the union of the elements' bounding rects, or `null` when none of the ids exist.
 - The properties you pass to `get-drawdy-elements` and `query-rect` select which fields come back on each [`SubscribedDrawdyElement`](/protocol/data-types#element-properties).
@@ -123,7 +123,7 @@ Preview elements are ephemeral: they render but are not committed to the scene.
 
 ```ts
 "command:scene:create-drawdy-preview-elements"
-req: { elements: DriverElement[] }
+req: { elements: DrawdyElementSchema[] }
 res: { previewed: number; previewId: string }
 
 "command:scene:delete-drawdy-preview-elements"
@@ -254,7 +254,7 @@ res: { created: boolean }
 req: {
     domId: string;
     position: { x: number; y: number };
-    schema: ElementSchema;
+    schema: DomElementSchema;
     barrierDismissible?: boolean;
     asPopover?: boolean;
 }

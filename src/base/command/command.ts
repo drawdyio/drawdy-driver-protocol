@@ -1,12 +1,12 @@
 import { DistributiveOmit, ProtocolCommand } from "../base";
 import { ContextMenu } from "../context-menu";
-import { DriverElement } from "../driver-element";
+import { DrawdyElementSchema } from "../drawdy-element-schema";
 import {
-    ElementSchema,
+    DomElementSchema,
     SubscribeableKey,
     SubscribedDrawdyElement,
     UpdateableProperties,
-} from "../element-schema";
+} from "../dom-element-schema";
 import { ScenePreviewCommand } from "../preview";
 import { DriverSubscription } from "../subscription";
 import { StyleableToolId, ToolStyleState } from "../tool-state";
@@ -144,7 +144,7 @@ export type DriverCommand =
                * The fixed position in the dom.
                */
               position: { x: number; y: number };
-              schema: ElementSchema;
+              schema: DomElementSchema;
               /**
                * When true, clicking outside the element dismisses it — same
                * effect as command:dom:remove-floating-element. The driver is NOT
@@ -179,14 +179,14 @@ export type DriverCommand =
     | ProtocolCommand<
           "command:scene:add-drawdy-elements",
           {
-              elements: DriverElement[];
+              elements: DrawdyElementSchema[];
           },
           { added: boolean }
       >
     | ProtocolCommand<
           "command:scene:create-drawdy-preview-elements",
           {
-              elements: DriverElement[];
+              elements: DrawdyElementSchema[];
           },
           { previewed: number; previewId: string }
       >

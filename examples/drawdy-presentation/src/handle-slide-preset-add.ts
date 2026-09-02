@@ -1,4 +1,4 @@
-import { DriverCommandIssuer, DriverElement } from "@drawdy/driver-protocol";
+import { DriverCommandIssuer, DrawdyElementSchema } from "@drawdy/driver-protocol";
 import { pickerDomId } from "./handle-slide-preset-open";
 import { buildSlideContent, SLIDE_HEIGHT, SLIDE_WIDTH } from "./slide-layouts";
 
@@ -31,7 +31,7 @@ export async function handleSlidePresetAdd({
     const origin = { x: (slideOrder - 1) * (SLIDE_WIDTH + SLIDE_GAP), y: 0 };
 
     const frameId = generateId();
-    const frame: DriverElement = {
+    const frame: DrawdyElementSchema = {
         type: "frame",
         drawdyElementId: frameId,
         position: [origin.x, origin.y],

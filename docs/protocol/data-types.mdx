@@ -1,9 +1,9 @@
 ---
 title: "Data Types"
-description: "DriverElement, ElementSchema, element properties, ModuleStyling, ToolStyleState, PreviewTransform, and CSS units."
+description: "DrawdyElementSchema, DomElementSchema, element properties, ModuleStyling, ToolStyleState, PreviewTransform, and CSS units."
 ---
 
-## DriverElement
+## DrawdyElementSchema
 
 The elements you add to the canvas with `scene:add-drawdy-elements` and preview commands. All variants share a common base:
 
@@ -27,7 +27,7 @@ type LineEndpoints = (
 ```
 
 ```ts
-type DriverElement =
+type DrawdyElementSchema =
     | (DriverElementCommon & {
           type: "frame";
           position: [number, number];
@@ -104,34 +104,34 @@ type DriverElement =
 - `elbowRouting` routes the line or arrow orthogonally between its two ends instead of straight; `bend` is ignored when it is set.
 - `text.width`/`height` are optional and can be measured later.
 
-## ElementSchema
+## DomElementSchema
 
 The declarative UI tree for floating elements. Layout primitives nest via `children`; leaves carry a `child`.
 
 ```ts
-type ElementSchema =
+type DomElementSchema =
     | {
           type: "button";
-          children?: ElementSchema[];
+          children?: DomElementSchema[];
           domId?: string;
           styles?: ElementSchemaStyles;
       }
     | {
           type: "box";
-          children?: ElementSchema[];
+          children?: DomElementSchema[];
           domId?: string;
           styles?: ElementSchemaStyles;
       }
     | {
           type: "grid";
-          children?: ElementSchema[];
+          children?: DomElementSchema[];
           domId?: string;
           styles?: ElementSchemaStyles &
               Partial<{ columns: number; gap: number }>;
       }
     | {
           type: "column" | "row";
-          children?: ElementSchema[];
+          children?: DomElementSchema[];
           domId?: string;
           styles?: ElementSchemaStyles &
               Partial<{ gap: number } & AlignmentStyles>;

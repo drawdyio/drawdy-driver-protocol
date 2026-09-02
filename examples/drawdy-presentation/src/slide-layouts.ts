@@ -1,4 +1,4 @@
-import { DriverElement, TextAlign } from "@drawdy/driver-protocol";
+import { DrawdyElementSchema, TextAlign } from "@drawdy/driver-protocol";
 
 /** Matches drawdy's slide canvas (see presentation presets/types.ts). */
 export const SLIDE_WIDTH = 1280;
@@ -27,7 +27,7 @@ export function buildSlideContent(
     presetId: string,
     origin: { x: number; y: number },
     generateId: () => string
-): DriverElement[] {
+): DrawdyElementSchema[] {
     const text = (opts: {
         x: number;
         y: number;
@@ -36,7 +36,7 @@ export function buildSlideContent(
         fontSize: number;
         color: string;
         align?: TextAlign;
-    }): DriverElement => ({
+    }): DrawdyElementSchema => ({
         type: "text",
         drawdyElementId: generateId(),
         x: origin.x + opts.x,
@@ -98,7 +98,7 @@ export function buildSlideContent(
             fontSize: opts.fontSize ?? 30,
         });
 
-    const accentRule = (x: number, y: number, width: number): DriverElement => ({
+    const accentRule = (x: number, y: number, width: number): DrawdyElementSchema => ({
         type: "line",
         drawdyElementId: generateId(),
         from: [origin.x + x, origin.y + y],
@@ -112,7 +112,7 @@ export function buildSlideContent(
         y: number;
         width: number;
         height: number;
-    }): DriverElement => ({
+    }): DrawdyElementSchema => ({
         type: "shape",
         drawdyElementId: generateId(),
         x: origin.x + opts.x,

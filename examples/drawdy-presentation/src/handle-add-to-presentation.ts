@@ -1,4 +1,4 @@
-import { DriverCommandIssuer, DriverElement } from "@drawdy/driver-protocol";
+import { DriverCommandIssuer, DrawdyElementSchema } from "@drawdy/driver-protocol";
 
 /** Breathing room between the selection's combined rect and the frame edge. */
 const FRAME_PADDING = 48;
@@ -54,7 +54,7 @@ export async function handleAddToPresentation({
         return false;
     }
 
-    const frame: DriverElement = {
+    const frame: DrawdyElementSchema = {
         type: "frame",
         drawdyElementId: generateId(),
         position: [rect.x - FRAME_PADDING, rect.y - FRAME_PADDING],
