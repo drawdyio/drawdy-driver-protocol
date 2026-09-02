@@ -1,4 +1,4 @@
-import { ProtocolCommand } from "./base";
+import { DistributiveOmit, ProtocolCommand } from "./base";
 import { SubscribeableKey, SubscribedDrawdyElement } from "./element-schema";
 import { ModuleStyling } from "./styling";
 
@@ -86,7 +86,12 @@ export type DriverSubscription =
     | ProtocolSubscription<"subscription:camera:moved-rapid", undefined>
     | ProtocolSubscription<"subscription:camera:moved-debounced", undefined>
     | ProtocolSubscription<"subscription:scene:text-edit", undefined>
-    | ProtocolSubscription<"subscription:keyboard:control-keys", undefined>;
+    | ProtocolSubscription<"subscription:keyboard:control-keys", undefined>
+    | ProtocolSubscription<
+          "subscription:scene:pointer",
+          // subscribes to all if undefined
+          { elementIds?: string[] }
+      >;
 
 export type DriverSubscriptionEvent =
     | ProtocolSubscriptionEvent<
@@ -229,6 +234,21 @@ export type DriverSubscriptionEvent =
               meta: boolean;
               alt: boolean;
           }
+      >
+    | ProtocolSubscriptionEvent<
+          "subscription:scene:pointer",
+          {
+              type: "up" | "down";
+              drawdyElementIds: string[];
+              /**
+               * https://developer.mozilla.org/en-US/docs/Web/API/PointerEvent/pressure
+               */
+              pressure: number;
+              cursor: {
+                  domSpace: { x: number; y: number };
+                  canvasSpace: { x: number; y: number };
+              };
+          }
       >;
 
 // Yes, subscription is just a specialized command
@@ -242,6 +262,10 @@ export type ProtocolSubscriptionEvent<T, BODY> = {
     type: T;
     subscriptionId: string;
 } & ([BODY] extends [undefined] ? {} : { body: BODY });
+
+export type SubscriptionCommand = DistributiveOmit<DriverSubscription, "res">;
+
+export type SubscriptionEvent = DriverSubscriptionEvent;
 
 // =================================================== type assertions below.
 

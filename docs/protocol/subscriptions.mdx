@@ -78,6 +78,18 @@ body: {
     rect: { x: number; y: number; width: number; height: number };
 }
 
+"subscription:scene:pointer"
+req:  { elementIds?: string[] }
+body: {
+    type: "up" | "down";
+    drawdyElementIds: string[];
+    pressure: number;
+    cursor: {
+        domSpace: { x: number; y: number };
+        canvasSpace: { x: number; y: number };
+    };
+}
+
 "subscription:scene:text-edit"
 body:
     | {
@@ -91,6 +103,8 @@ body:
 ```
 
 The `properties` you pass when subscribing to element events select which fields populate each returned [`SubscribedDrawdyElement`](/protocol/data-types#element-properties). `elements-replaced` reports both the new elements (`drawdyElements`) and the ones they replaced (`replaced`). `scene:activity` fires whenever there is activity inside the rect you registered.
+
+`scene:pointer` fires on pointer-down and pointer-up over one or more scene elements — `type` says which. It reports every element under the cursor (`drawdyElementIds`), the pointer `pressure`, and the position in both `domSpace` (screen/client pixels) and `canvasSpace` (world coordinates). Pass `req.elementIds` to hear only about presses that land on those elements (the body is narrowed to the matching ids); omit it to hear about any element. Pointer events over empty canvas don't fire.
 
 ## Camera events
 
