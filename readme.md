@@ -2,4 +2,4 @@
 
 This package defines the communication protocol between Drawdy extensions and the Drawdy app.
 
-[`docs/`](docs/)
+[`docs`](https://ddp.drawdy.io/)
