@@ -18,6 +18,11 @@ type CameraMovedEventBody = {
     zoom: number;
 };
 
+type MappedCoordinate = {
+    domSpace: { x: number; y: number };
+    canvasSpace: { x: number; y: number };
+};
+
 export type ControlKey =
     | "tab"
     | "enter"
@@ -254,18 +259,23 @@ export type DriverSubscriptionEvent =
       >
     | ProtocolSubscriptionEvent<
           "subscription:scene:pointer",
-          {
-              type: "up" | "down";
-              drawdyElementIds: string[];
-              /**
-               * https://developer.mozilla.org/en-US/docs/Web/API/PointerEvent/pressure
-               */
-              pressure: number;
-              cursor: {
-                  domSpace: { x: number; y: number };
-                  canvasSpace: { x: number; y: number };
-              };
-          }
+          | {
+                type: "up" | "down";
+                drawdyElementIds: string[];
+                /**
+                 * https://developer.mozilla.org/en-US/docs/Web/API/PointerEvent/pressure
+                 */
+                pressure: number;
+                cursor: MappedCoordinate;
+            }
+          | {
+                type: "enter" | "out";
+                drawdyElementIds: string[];
+                cursor: MappedCoordinate;
+            }
+          | {
+                type: "cancel";
+            }
       >;
 
 // Yes, subscription is just a specialized command
