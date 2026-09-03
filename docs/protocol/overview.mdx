@@ -36,7 +36,7 @@ type ProtocolCommand<T, REQ, RES> = {
 - **`driverId`** is your extension's id (from the manifest).
 - **`requestId`** is any value unique within your driver; it pairs a response to its request.
 - **`req`** carries the request payload. Commands with no input omit it.
-- **`res`** is the response: either `{ value }` or `{ error }`. On failure `error` is a structured [`ProtocolCommandError`](#errors), not a bare string.
+- **`res`** is the response: either `{ value }` or `{ error }`. On failure `error` is a structured [`ProtocolCommandError`](#errors)
 
 ## Errors
 
@@ -50,9 +50,9 @@ interface ProtocolError<T extends string> {
 }
 
 type ProtocolCommandError =
-    | ProtocolError<"runtime">      // an unexpected drawdy-side failure (HTTP 500)
+    | ProtocolError<"runtime"> // an unexpected drawdy-side failure (HTTP 500)
     | ProtocolError<"bad-argument"> // the request was malformed (HTTP 400)
-    | ProtocolError<"not-found">    // a referenced element/resource is missing (HTTP 404)
+    | ProtocolError<"not-found"> // a referenced element/resource is missing (HTTP 404)
     | ProtocolError<"unauthorized">; // permission was not granted (HTTP 401)
 ```
 
