@@ -39,6 +39,12 @@ export type DriverSubscription =
           }
       >
     | ProtocolSubscription<
+          "subscription:dom:element-hovered",
+          {
+              domElementId: string;
+          }
+      >
+    | ProtocolSubscription<
           "subscription:scene:elements-added",
           ElementSubscriptionRequest
       >
@@ -149,6 +155,14 @@ export type DriverSubscriptionEvent =
       >
     | ProtocolSubscriptionEvent<
           "subscription:dom:element-clicked",
+          {
+              domElementId: string;
+              clientX: number;
+              clientY: number;
+          }
+      >
+    | ProtocolSubscriptionEvent<
+          "subscription:dom:element-hovered",
           {
               domElementId: string;
               clientX: number;

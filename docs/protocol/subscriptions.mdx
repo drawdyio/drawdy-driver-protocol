@@ -161,6 +161,16 @@ body: {
     clientY: number;
 }
 
+("subscription:dom:element-hovered");
+req: {
+    domElementId: string;
+}
+body: {
+    domElementId: string;
+    clientX: number;
+    clientY: number;
+}
+
 ("subscription:dom:theme-changed");
 body: {
     styling: ModuleStyling;
@@ -196,6 +206,8 @@ body: {
     }
 }
 ```
+
+`element-clicked` fires when the named element is clicked; `element-hovered` fires when the pointer moves onto it — both are scoped to `req.domElementId` and report the pointer position in client pixels. `element-hovered` fires once per entry (when the hovered element changes), not on every pointer move within it.
 
 `theme-changed` delivers the updated [`ModuleStyling`](/protocol/data-types#modulestyling) whenever the user switches theme.
 
