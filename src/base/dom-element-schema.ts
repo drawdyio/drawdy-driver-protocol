@@ -23,6 +23,17 @@ export type ElementSchemaBaseStyles = Partial<{
     borderRadius: Dimension;
     overflow: "visible" | "hidden" | "clip" | "scroll" | "auto";
     pointerEvents: "auto" | "none";
+    transform: string;
+    cursor:
+        | "auto"
+        | "default"
+        | "pointer"
+        | "grab"
+        | "grabbing"
+        | "crosshair"
+        | "move"
+        | "not-allowed"
+        | "text";
 }>;
 
 export type ElementSchemaStyles = ElementSchemaBaseStyles & {

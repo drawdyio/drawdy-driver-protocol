@@ -267,7 +267,7 @@ export type DriverCommand =
           }
       >
     | ProtocolCommand<
-          "command:scene:get-selected-ids",
+          "command:scene:get-current-selected-drawdy-elements",
           undefined,
           {
               drawdyElementIds: string[];
@@ -348,7 +348,7 @@ export type DriverCommand =
           undefined
       >
     | ProtocolCommand<
-          "command:scene:query-tool-state",
+          "command:scene:query-tool-style-state",
           { toolId: StyleableToolId },
           { state: ToolStyleState | null }
       >

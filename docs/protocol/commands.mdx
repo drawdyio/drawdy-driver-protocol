@@ -104,7 +104,7 @@ req: { drawdyElementIds: string[] }
 
 "command:scene:clear-selection"
 
-"command:scene:get-selected-ids"
+"command:scene:get-current-selected-drawdy-elements"
 res: { drawdyElementIds: string[] }
 
 "command:scene:capture-screenshot"
@@ -200,7 +200,7 @@ req: {
     };
 }
 
-"command:scene:query-tool-state"
+"command:scene:query-tool-style-state"
 req: { toolId: StyleableToolId }
 res: { state: ToolStyleState | null }
 

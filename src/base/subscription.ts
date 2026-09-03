@@ -44,7 +44,7 @@ export type DriverSubscription =
           }
       >
     | ProtocolSubscription<
-          "subscription:dom:element-hovered",
+          "subscription:dom:pointer",
           {
               domElementId: string;
           }
@@ -105,6 +105,15 @@ export type DriverSubscription =
           "subscription:scene:pointer",
           // subscribes to all if undefined
           { elementIds?: string[] }
+      >
+    | ProtocolSubscription<
+          "subscription:scene:click",
+          // subscribes to all if undefined
+          { elementIds?: string[] }
+      >
+    | ProtocolSubscription<
+          "subscription:scene:drawdy-element-selection",
+          undefined
       >;
 
 export type DriverSubscriptionEvent =
@@ -167,12 +176,17 @@ export type DriverSubscriptionEvent =
           }
       >
     | ProtocolSubscriptionEvent<
-          "subscription:dom:element-hovered",
-          {
-              domElementId: string;
-              clientX: number;
-              clientY: number;
-          }
+          "subscription:dom:pointer",
+          | {
+                type: "enter" | "out";
+                domElementId: string;
+                clientX: number;
+                clientY: number;
+            }
+          | {
+                type: "cancel";
+                domElementId: string;
+            }
       >
     | ProtocolSubscriptionEvent<
           "subscription:dom:theme-changed",
@@ -276,6 +290,19 @@ export type DriverSubscriptionEvent =
           | {
                 type: "cancel";
             }
+      >
+    | ProtocolSubscriptionEvent<
+          "subscription:scene:click",
+          {
+              drawdyElementIds: string[];
+              cursor: MappedCoordinate;
+          }
+      >
+    | ProtocolSubscriptionEvent<
+          "subscription:scene:drawdy-element-selection",
+          {
+              drawdyElementIds: string[];
+          }
       >;
 
 // Yes, subscription is just a specialized command

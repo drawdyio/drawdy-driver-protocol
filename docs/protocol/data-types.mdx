@@ -186,6 +186,16 @@ type ElementSchemaBaseStyles = Partial<{
     borderRadius: Dimension;
     overflow: "visible" | "hidden" | "clip" | "scroll" | "auto";
     pointerEvents: "auto" | "none";
+    cursor:
+        | "auto"
+        | "default"
+        | "pointer"
+        | "grab"
+        | "grabbing"
+        | "crosshair"
+        | "move"
+        | "not-allowed"
+        | "text";
 }>;
 
 type ElementSchemaStyles = ElementSchemaBaseStyles & {
@@ -301,7 +311,7 @@ For example, `{ theme: "light", background: "#fff", radiusSm: "2px", ... }`.
 
 ## ToolStyleState
 
-The style state of a built-in tool, returned by `scene:query-tool-state`.
+The style state of a built-in tool, returned by `scene:query-tool-style-state`.
 
 ```ts
 type ToolStyleState =

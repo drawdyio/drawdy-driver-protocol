@@ -18,7 +18,7 @@ export async function toggleSelectionTag(
 ): Promise<number> {
     const { drawdyElementIds } = unwrap(
         await ctx.issueCommand({
-            type: "command:scene:get-selected-ids",
+            type: "command:scene:get-current-selected-drawdy-elements",
             ...stamp(ctx),
         })
     );

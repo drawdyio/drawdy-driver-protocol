@@ -128,7 +128,7 @@ export const activate: DriverModule["activate"] = async ({
         try {
             const { drawdyElementIds } = unwrap(
                 await issueCommand({
-                    type: "command:scene:get-selected-ids",
+                    type: "command:scene:get-current-selected-drawdy-elements",
                     ...stamp(ctx),
                 })
             );

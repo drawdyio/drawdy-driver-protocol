@@ -25,7 +25,7 @@ export async function handleAddToPresentation({
 }): Promise<boolean> {
     const selected = await issueCommand({
         driverId,
-        type: "command:scene:get-selected-ids",
+        type: "command:scene:get-current-selected-drawdy-elements",
         requestId: String(requestId.getAndBump()),
     });
     if (selected.res.error != null) {

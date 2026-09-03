@@ -47,7 +47,7 @@ Shows:
 - An [action button](/protocol/commands#dom): `command:dom:create-action-button`, `subscription:dom:element-clicked`, `command:dom:element-rect`.
 - [Preview elements](/protocol/commands#scene-preview-elements) during drag and drop: `command:scene:create-drawdy-preview-elements`, `command:scene:delete-drawdy-preview-elements`, then `command:scene:add-drawdy-elements`.
 - [Text editing](/protocol/commands#scene-text-editing): `subscription:scene:text-edit`, `command:scene:update-text-edit`.
-- Also `subscription:dom:theme-changed`, `subscription:keyboard:control-keys`, `command:scene:query-tool-state`, `command:camera:screen-to-canvas`, and `command:camera:get-viewport-rect`.
+- Also `subscription:dom:theme-changed`, `subscription:keyboard:control-keys`, `command:scene:query-tool-style-state`, `command:camera:screen-to-canvas`, and `command:camera:get-viewport-rect`.
 
 ## Physics Engine
 
@@ -58,7 +58,7 @@ Shows:
 Shows:
 
 - [Context menus](/protocol/commands#context-menus): `command:context-menu:add`, `command:context-menu:remove`, `subscription:context-menu:clicked`.
-- Reading the selection: `command:scene:get-selected-ids`, `command:scene:get-drawdy-elements`.
+- Reading the selection: `command:scene:get-current-selected-drawdy-elements`, `command:scene:get-drawdy-elements`.
 - The [preview-transform lifecycle](/protocol/commands#scene-preview-transforms): `command:scene:begin-preview`, `command:scene:preview-transforms`, `command:scene:end-preview`, plus `command:scene:update-drawdy-elements`.
 - [Scene events](/protocol/subscriptions#scene-events) `elements-added`, `elements-updated`, `elements-removed`, `elements-replaced`, and [`subscription:camera:moved-rapid`](/protocol/subscriptions#camera-events).
 - A physics engine under `src/engine/` (broadphase, narrowphase, impulses, frame clock) with Jest tests: `pnpm --filter drawdy-physics-engine test`.
@@ -74,6 +74,6 @@ The richest example, and the only one with a bundled UI: a React 19 + Tailwind w
 - A [React webview](/protocol/commands#webviews): `command:webview:create`, `command:webview:hide`, `command:webview:post-message`, `subscription:webview:message`, and `acquireDrawdyApi()` from the [webview API](/protocol/webview-api) inside it.
 - [DOM surfaces](/protocol/commands#dom): a floating slide picker via `command:dom:create-floating-element` and `command:dom:remove-floating-element`, `command:dom:create-action-button`, `command:dom:element-rect`, `command:dom:window-size`, and fullscreen presenting with `command:dom:enter-fullscreen`, `command:dom:exit-fullscreen`, and [`subscription:dom:fullscreen-changed`](/protocol/subscriptions#dom-events).
 - [Context menus](/protocol/commands#context-menus): `command:context-menu:add`, `subscription:context-menu:clicked`.
-- [Scene reads and writes](/protocol/commands#scene-elements): `command:scene:get-selected-ids`, `command:scene:get-drawdy-elements`, `command:scene:add-drawdy-elements`, `command:scene:update-drawdy-elements`, `command:scene:query-combined-rect`, `command:scene:element-rects`, and slide thumbnails via `command:scene:capture-screenshot`.
+- [Scene reads and writes](/protocol/commands#scene-elements): `command:scene:get-current-selected-drawdy-elements`, `command:scene:get-drawdy-elements`, `command:scene:add-drawdy-elements`, `command:scene:update-drawdy-elements`, `command:scene:query-combined-rect`, `command:scene:element-rects`, and slide thumbnails via `command:scene:capture-screenshot`.
 - [Camera](/protocol/commands#camera) `command:camera:fly-to-elements` and [tools](/protocol/commands#tools) `command:tools:get-active`, `command:tools:set-active`.
 - [Scene events](/protocol/subscriptions#scene-events) `elements-added`, `elements-updated`, `elements-removed`, `elements-replaced`, plus `subscription:scene:activity` and `subscription:dom:theme-changed`; unsubscribes with `command:subscription:remove`.

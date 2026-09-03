@@ -13,9 +13,7 @@ export function stamp(ctx: Ctx): { driverId: string; requestId: string } {
 }
 
 /** Unwrap a command response, throwing the drawdy-side error if any. */
-export function unwrap<V>(response: {
-    res: { error?: string; value?: V };
-}): V {
+export function unwrap<V>(response: { res: { error?: any; value?: V } }): V {
     const { error, value } = response.res;
     if (error !== undefined) {
         throw new Error(error);

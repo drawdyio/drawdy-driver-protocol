@@ -122,6 +122,16 @@ body:
       }
     | { type: "cancel" }
 
+"subscription:scene:click"
+req:  { elementIds?: string[] }
+body: {
+    drawdyElementIds: string[];
+    cursor: {
+        domSpace: { x: number; y: number };
+        canvasSpace: { x: number; y: number };
+    };
+}
+
 "subscription:scene:text-edit"
 body:
     | {
@@ -132,11 +142,18 @@ body:
           text: string;
       }
     | { type: "commit" | "cancel" }
+
+"subscription:scene:drawdy-element-selection"
+body: { drawdyElementIds: string[] }
 ```
 
 The `properties` you pass when subscribing to element events select which fields populate each returned [`SubscribedDrawdyElement`](/protocol/data-types#element-properties). `elements-replaced` reports both the new elements (`drawdyElements`) and the ones they replaced (`replaced`). `scene:activity` fires whenever there is activity inside the rect you registered.
 
 `scene:pointer` reports pointer activity over scene elements — `type` says which: `down`/`up` are presses (they carry `pressure`), and `enter`/`out` fire once as the pointer moves onto or off an element (hover — no `pressure`). Both report every element under the cursor (`drawdyElementIds`) and the position in both `domSpace` (screen/client pixels) and `canvasSpace` (world coordinates). `cancel` fires when the gesture is aborted and carries nothing. Pass `req.elementIds` to hear only about `down`/`up`/`enter`/`out` that land on those elements (the body is narrowed to the matching ids); omit it to hear about any element. `enter`/`out` are suppressed while drawing. Pointer events over empty canvas don't fire, but `cancel` always reaches every subscriber.
+
+`scene:click` fires on a completed click — a pointer press and release that land on the same scene element(s) — reporting the elements clicked (`drawdyElementIds`) and the cursor position. Like `scene:pointer`, pass `req.elementIds` to hear only about clicks on those elements (the body is narrowed to the matching ids); omit it to hear about any element. It's the scene-level counterpart to [`subscription:dom:element-clicked`](#dom-events) — use it for clicks on canvas elements (including component/widget elements), which live in the scene rather than the host DOM.
+
+`scene:drawdy-element-selection` fires whenever the canvas selection changes, delivering the full set of currently selected ids (`drawdyElementIds` is empty when the selection is cleared) — not a delta. Read the current selection at any time with [`command:scene:get-current-selected-drawdy-elements`](/protocol/commands#scene-elements).
 
 ## Camera events
 
@@ -171,15 +188,18 @@ body: {
     clientY: number;
 }
 
-("subscription:dom:element-hovered");
+("subscription:dom:pointer");
 req: {
     domElementId: string;
 }
-body: {
-    domElementId: string;
-    clientX: number;
-    clientY: number;
-}
+body:
+    | {
+          type: "enter" | "out";
+          domElementId: string;
+          clientX: number;
+          clientY: number;
+      }
+    | { type: "cancel"; domElementId: string }
 
 ("subscription:dom:theme-changed");
 body: {
@@ -217,7 +237,9 @@ body: {
 }
 ```
 
-`element-clicked` fires when the named element is clicked; `element-hovered` fires when the pointer moves onto it — both are scoped to `req.domElementId` and report the pointer position in client pixels. `element-hovered` fires once per entry (when the hovered element changes), not on every pointer move within it.
+`element-clicked` fires when the named element is clicked — scoped to `req.domElementId`, reporting the pointer position in client pixels.
+
+`dom:pointer` is the DOM counterpart of [`scene:pointer`](#scene-events), scoped to `req.domElementId`: `enter`/`out` fire once as the pointer moves onto or off the element (each carries the pointer position in client pixels), and `cancel` fires when the pointer interaction is aborted. `enter`/`out` fire on element changes, not on every move within the element.
 
 `theme-changed` delivers the updated [`ModuleStyling`](/protocol/data-types#modulestyling) whenever the user switches theme.
 

@@ -350,7 +350,7 @@ async function queryTextStyle(): Promise<{ fontSize: number; color: string }> {
     const fallback = { fontSize: 24, color: driver!.styling.foreground };
     if (!driver) return fallback;
     const res = await driver.issueCommand({
-        type: "command:scene:query-tool-state",
+        type: "command:scene:query-tool-style-state",
         driverId: driver.manifest.driverId,
         requestId: nextRequestId(),
         req: { toolId: "text" },
