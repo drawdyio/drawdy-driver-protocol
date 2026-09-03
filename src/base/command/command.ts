@@ -1,12 +1,12 @@
 import { DistributiveOmit, ProtocolCommand } from "../base";
 import { ContextMenu } from "../context-menu";
 import { DomElementSchema } from "../dom-element-schema";
+import { DrawdyElementSchema } from "../drawdy-element-schema";
 import {
-    DrawdyElementSchema,
     SubscribeableKey,
     SubscribedDrawdyElement,
     UpdateableProperties,
-} from "../drawdy-element-schema";
+} from "../drawdy-element-schema/common";
 import { ScenePreviewCommand } from "../preview";
 import { DriverSubscription } from "../subscription";
 import { StyleableToolId, ToolStyleState } from "../tool-state";
@@ -174,14 +174,14 @@ export type DriverCommand =
               domId: string;
               position: { x: number; y: number };
           },
-          { moved: boolean }
+          undefined
       >
     | ProtocolCommand<
           "command:scene:add-drawdy-elements",
           {
               elements: DrawdyElementSchema[];
           },
-          { added: boolean }
+          undefined
       >
     | ProtocolCommand<
           "command:scene:create-drawdy-preview-elements",

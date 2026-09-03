@@ -26,7 +26,9 @@ type ProtocolCommand<T, REQ, RES> = {
     driverId: string;
     requestId: string;
     type: T;
-    res: { error?: never; value: RES } | { error: string; value?: never };
+    res:
+        | { error?: never; value: RES }
+        | { error: ProtocolCommandError; value?: never };
 } & (REQ extends undefined ? {} : { req: REQ });
 ```
 
@@ -34,7 +36,27 @@ type ProtocolCommand<T, REQ, RES> = {
 - **`driverId`** is your extension's id (from the manifest).
 - **`requestId`** is any value unique within your driver; it pairs a response to its request.
 - **`req`** carries the request payload. Commands with no input omit it.
-- **`res`** is the response: either `{ value }` or `{ error }`.
+- **`res`** is the response: either `{ value }` or `{ error }`. On failure `error` is a structured [`ProtocolCommandError`](#errors), not a bare string.
+
+## Errors
+
+A failed command carries a `ProtocolCommandError` in `res.error` — a discriminated `type` you can branch on, plus an optional human-readable `message` and a `body` with structured detail. The `type` values mirror familiar HTTP semantics:
+
+```ts
+interface ProtocolError<T extends string> {
+    type: T;
+    message?: string;
+    body?: Record<string, any>;
+}
+
+type ProtocolCommandError =
+    | ProtocolError<"runtime">      // an unexpected drawdy-side failure (HTTP 500)
+    | ProtocolError<"bad-argument"> // the request was malformed (HTTP 400)
+    | ProtocolError<"not-found">    // a referenced element/resource is missing (HTTP 404)
+    | ProtocolError<"unauthorized">; // permission was not granted (HTTP 401)
+```
+
+Branch on `error.type` to react (e.g. degrade gracefully on `"unauthorized"`); read `error.message` for display and `error.body` for the specifics (`not-found` carries the missing id, for instance).
 
 You never build the whole object with `res` yourself. You issue a **request** — the command minus `res` — and receive a **response** — the command minus `req`:
 

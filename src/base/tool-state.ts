@@ -1,4 +1,4 @@
-import { StrokeDash, TextAlign } from "./drawdy-element-schema";
+import { StrokeDash, TextAlign } from "./drawdy-element-schema/common";
 
 export type ToolStyleState =
     | {
@@ -57,5 +57,6 @@ export type ToolId =
     | "image"
     | "laser-pointer";
 
-type AssertStyleableAreTools =
-    ToolStyleState["toolId"] extends ToolId ? true : never;
+type AssertStyleableAreTools = ToolStyleState["toolId"] extends ToolId
+    ? true
+    : never;

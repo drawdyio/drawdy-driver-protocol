@@ -2,7 +2,7 @@ import { DistributiveOmit, ProtocolCommand } from "./base";
 import {
     SubscribeableKey,
     SubscribedDrawdyElement,
-} from "./drawdy-element-schema";
+} from "./drawdy-element-schema/common";
 import { ModuleStyling } from "./styling";
 
 /**
