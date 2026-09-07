@@ -187,6 +187,7 @@ export type DriverCommand =
           "command:scene:create-drawdy-preview-elements",
           {
               elements: DrawdyElementSchema[];
+              hitTestable?: boolean;
           },
           { previewed: number; previewId: string }
       >

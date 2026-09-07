@@ -119,17 +119,19 @@ res: { png: Blob }
 
 ## Scene: preview elements
 
-Preview elements are ephemeral: they render but are not committed to the scene.
+Preview elements are ephemeral: they render but are not committed to the scene, so they never persist, sync, or survive a refresh.
 
 ```ts
 "command:scene:create-drawdy-preview-elements"
-req: { elements: DrawdyElementSchema[] }
+req: { elements: DrawdyElementSchema[]; hitTestable?: boolean }
 res: { previewed: number; previewId: string }
 
 "command:scene:delete-drawdy-preview-elements"
 req: { previewIds: string[] }
 res: { deleted: number }
 ```
+
+By default preview elements are purely visual: the pointer passes through them and they never appear in [`scene:pointer`](/protocol/subscriptions#scene-events) or [`scene:click`](/protocol/subscriptions#scene-events). Pass `hitTestable: true` to register them for hit-testing — they then report `enter`/`out`/`down`/`up` and clicks under their `drawdyElementId` like any scene element, while staying uncommitted. Pressing a hit-testable preview element does not select it or disturb the current selection, which makes them the right primitive for ephemeral on-canvas controls (handles, quick-add dots, hover targets).
 
 ## Scene: preview transforms
 
