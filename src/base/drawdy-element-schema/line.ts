@@ -1,10 +1,4 @@
-import { DrawdyElementCommon, StrokeDash } from "./common";
-
-export type LineBinding = {
-    drawdyElementId: string;
-    anchorX: number;
-    anchorY: number;
-};
+import { DrawdyElementCommon, LineBinding, StrokeDash } from "./common";
 
 /**
  * Either bind to an element or a position on the canvas. Never both

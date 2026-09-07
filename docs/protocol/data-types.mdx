@@ -241,6 +241,8 @@ interface SubscribeableProperties extends ElementStyle {
     points: [number, number][];
     rotation: number;
     text: string;
+    startBinding: LineBinding;
+    endBinding: LineBinding;
 }
 
 type SubscribeableKey = keyof SubscribeableProperties;
@@ -249,7 +251,7 @@ type DrawdyElement = { id: string };
 type SubscribedDrawdyElement = DrawdyElement & Partial<SubscribeableProperties>;
 ```
 
-When you query or subscribe you pass a list of `SubscribeableKey`; each returned `SubscribedDrawdyElement` carries `id` plus exactly the properties you asked for. Style fields are only present when the element has them set. The package is type-only, so to request every style field build the key list yourself — a `Record<keyof ElementStyle, 0>` literal checked with `satisfies` gives you a compile-time-complete list to `Object.keys`.
+When you query or subscribe you pass a list of `SubscribeableKey`; each returned `SubscribedDrawdyElement` carries `id` plus exactly the properties you asked for. Style fields are only present when the element has them set. `startBinding`/`endBinding` are present only on lines and arrows whose end is bound to another element — request them to discover which elements a connector links. The package is type-only, so to request every style field build the key list yourself — a `Record<keyof ElementStyle, 0>` literal checked with `satisfies` gives you a compile-time-complete list to `Object.keys`.
 
 Updates are a partial patch:
 

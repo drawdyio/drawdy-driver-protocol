@@ -1,5 +1,11 @@
 export type DrawdyElement = { id: string };
 
+export type LineBinding = {
+    drawdyElementId: string;
+    anchorX: number;
+    anchorY: number;
+};
+
 export interface SubscribeableProperties extends ElementStyle {
     type: string;
     componentType: string;
@@ -12,6 +18,8 @@ export interface SubscribeableProperties extends ElementStyle {
     points: [number, number][];
     rotation: number;
     text: string;
+    startBinding: LineBinding;
+    endBinding: LineBinding;
 }
 
 export type SubscribeableKey = keyof SubscribeableProperties;
