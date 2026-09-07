@@ -145,6 +145,11 @@ body:
 
 "subscription:scene:drawdy-element-selection"
 body: { drawdyElementIds: string[] }
+
+"subscription:scene:drag"
+body:
+    | { type: "dragStart" | "dragging"; drawdyElementIds: string[] }
+    | { type: "dragEnd" }
 ```
 
 The `properties` you pass when subscribing to element events select which fields populate each returned [`SubscribedDrawdyElement`](/protocol/data-types#element-properties). `elements-replaced` reports both the new elements (`drawdyElements`) and the ones they replaced (`replaced`). `scene:activity` fires whenever there is activity inside the rect you registered.
@@ -152,6 +157,8 @@ The `properties` you pass when subscribing to element events select which fields
 `scene:pointer` reports pointer activity over scene elements — `type` says which: `down`/`up` are presses (they carry `pressure`), and `enter`/`out` fire once as the pointer moves onto or off an element (hover — no `pressure`). Both report every element under the cursor (`drawdyElementIds`) and the position in both `domSpace` (screen/client pixels) and `canvasSpace` (world coordinates). `cancel` fires when the gesture is aborted and carries nothing. Pass `req.elementIds` to hear only about `down`/`up`/`enter`/`out` that land on those elements (the body is narrowed to the matching ids); omit it to hear about any element. `enter`/`out` are suppressed while drawing. Pointer events over empty canvas don't fire, but `cancel` always reaches every subscriber.
 
 `scene:click` fires on a completed click — a pointer press and release that land on the same scene element(s) — reporting the elements clicked (`drawdyElementIds`) and the cursor position. Like `scene:pointer`, pass `req.elementIds` to hear only about clicks on those elements (the body is narrowed to the matching ids); omit it to hear about any element. It's the scene-level counterpart to [`subscription:dom:element-clicked`](#dom-events) — use it for clicks on canvas elements (including component/widget elements), which live in the scene rather than the host DOM. Both `scene:pointer` and `scene:click` also report [preview elements](/protocol/commands#scene-preview-elements) created with `hitTestable: true`, which is how an extension gets hover and click on ephemeral on-canvas controls without committing anything to the scene.
+
+`scene:drag` reports the select tool moving elements on the canvas: one `dragStart` when a press on a selected element begins a move (it carries the ids being moved), a `dragging` per pointer move while held, and one `dragEnd` on release or cancel. Note that `dragStart` fires on the press itself, before any movement, so a plain click on an element produces a `dragStart`/`dragEnd` pair. Use it to hide transient on-canvas UI (handles, quick-add dots) while things move and rebuild it from fresh geometry on `dragEnd`. It's the scene-level counterpart to [`subscription:dom:drag`](#dom-events).
 
 `scene:drawdy-element-selection` fires whenever the canvas selection changes, delivering the full set of currently selected ids (`drawdyElementIds` is empty when the selection is cleared) — not a delta. Read the current selection at any time with [`command:scene:get-current-selected-drawdy-elements`](/protocol/commands#scene-elements).
 

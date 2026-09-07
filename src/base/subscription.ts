@@ -114,7 +114,8 @@ export type DriverSubscription =
     | ProtocolSubscription<
           "subscription:scene:drawdy-element-selection",
           undefined
-      >;
+      >
+    | ProtocolSubscription<"subscription:scene:drag", undefined>;
 
 export type DriverSubscriptionEvent =
     | ProtocolSubscriptionEvent<
@@ -303,6 +304,16 @@ export type DriverSubscriptionEvent =
           {
               drawdyElementIds: string[];
           }
+      >
+    | ProtocolSubscriptionEvent<
+          "subscription:scene:drag",
+          | {
+                type: "dragStart" | "dragging";
+                drawdyElementIds: string[];
+            }
+          | {
+                type: "dragEnd";
+            }
       >;
 
 // Yes, subscription is just a specialized command
