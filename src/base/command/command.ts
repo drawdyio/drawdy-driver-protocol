@@ -199,6 +199,13 @@ export type DriverCommand =
           { deleted: number }
       >
     | ProtocolCommand<
+          "command:scene:update-drawdy-preview-elements",
+          {
+              elements: DrawdyElementSchema[];
+          },
+          { updated: number }
+      >
+    | ProtocolCommand<
           "command:scene:remove-drawdy-elements",
           {
               drawdyElementIds: string[];

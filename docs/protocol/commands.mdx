@@ -130,7 +130,13 @@ res: { previewed: number; previewId: string }
 "command:scene:delete-drawdy-preview-elements"
 req: { previewIds: string[] }
 res: { deleted: number }
+
+"command:scene:update-drawdy-preview-elements"
+req: { elements: DrawdyElementSchema[] }
+res: { updated: number }
 ```
+
+`update-drawdy-preview-elements` replaces live preview elements in place: each schema is matched to an existing preview by `drawdyElementId` and swapped for the new geometry and style, keeping its `previewId` batch and hit-testability. Ids that aren't a live preview are skipped (`updated` counts the ones that were). Use it for cheap per-frame adjustments — for example resizing screen-anchored controls on [`camera:moved-rapid`](/protocol/subscriptions#camera-events) so they hold a constant pixel size — instead of deleting and recreating them.
 
 By default preview elements are purely visual: the pointer passes through them and they never appear in [`scene:pointer`](/protocol/subscriptions#scene-events) or [`scene:click`](/protocol/subscriptions#scene-events). Pass `hitTestable: true` to register them for hit-testing — they then report `enter`/`out`/`down`/`up` and clicks under their `drawdyElementId` like any scene element, while staying uncommitted. Pressing a hit-testable preview element does not select it or disturb the current selection, which makes them the right primitive for ephemeral on-canvas controls (handles, quick-add dots, hover targets).
 
