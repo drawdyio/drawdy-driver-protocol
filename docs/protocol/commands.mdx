@@ -76,7 +76,7 @@ req: {
 res: { updated: number }
 
 "command:scene:get-drawdy-elements"
-req: { properties: SubscribeableKey[] }
+req: { properties: SubscribeableKey[]; drawdyElementIds?: string[] }
 res: { drawdyElements: SubscribedDrawdyElement[] }
 
 "command:scene:query-rect"
@@ -116,6 +116,7 @@ res: { png: Blob }
 - When updating, `meta` is **merged** into the element's existing meta; every other property is set as given. See [`UpdateableProperties`](/protocol/data-types#element-properties).
 - `query-combined-rect` returns the union of the elements' bounding rects, or `null` when none of the ids exist.
 - The properties you pass to `get-drawdy-elements` and `query-rect` select which fields come back on each [`SubscribedDrawdyElement`](/protocol/data-types#element-properties).
+- `get-drawdy-elements` returns the whole scene by default; pass `drawdyElementIds` to fetch only those elements (ids that don't exist are silently skipped).
 
 ## Scene: preview elements
 

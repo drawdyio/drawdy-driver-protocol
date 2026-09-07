@@ -246,6 +246,7 @@ export type DriverCommand =
           "command:scene:get-drawdy-elements",
           {
               properties: SubscribeableKey[];
+              drawdyElementIds?: string[];
           },
           {
               drawdyElements: SubscribedDrawdyElement[];

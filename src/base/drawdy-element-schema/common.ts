@@ -1,6 +1,6 @@
 export type DrawdyElement = { id: string };
 
-export type SubscribeableProperties = {
+export interface SubscribeableProperties extends ElementStyle {
     type: string;
     componentType: string;
     meta: Record<string, unknown>;
@@ -12,7 +12,7 @@ export type SubscribeableProperties = {
     points: [number, number][];
     rotation: number;
     text: string;
-};
+}
 
 export type SubscribeableKey = keyof SubscribeableProperties;
 
@@ -39,11 +39,12 @@ export type LocalAnimation = {
     };
 };
 
-export type UpdateableProperties = Partial<{
-    meta: Record<string, unknown>;
-    locked: boolean;
-    localAnimation: LocalAnimation | null;
-}>;
+export type UpdateableProperties = ElementStyle &
+    Partial<{
+        meta: Record<string, unknown>;
+        locked: boolean;
+        localAnimation: LocalAnimation | null;
+    }>;
 
 export type SubscribedDrawdyElement = DrawdyElement &
     Partial<SubscribeableProperties>;
@@ -52,8 +53,24 @@ export type StrokeDash = "solid" | "dashed" | "dotted";
 
 export type TextAlign = "left" | "center" | "right";
 
-export type DrawdyElementCommon = {
-    drawdyElementId: string;
+export type FillStyle = "solid" | "hachure" | "cross-hatch";
+
+export type ElementStyle = {
     layer?: number;
-    meta?: Record<string, any>;
+    strokeColor?: string;
+    textColor?: string;
+    fillColor?: string;
+    strokeWidth?: number;
+    lineStrokeWidth?: number;
+    opacity?: number;
+    cornerRadius?: number;
+    strokeDash?: StrokeDash;
+    fillStyle?: FillStyle;
+    seed?: number;
+    roughness?: number;
 };
+
+export interface DrawdyElementCommon extends ElementStyle {
+    drawdyElementId: string;
+    meta?: Record<string, any>;
+}

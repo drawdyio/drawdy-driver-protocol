@@ -5,19 +5,34 @@ description: "DrawdyElementSchema, DomElementSchema, element properties, ModuleS
 
 ## DrawdyElementSchema
 
-The elements you add to the canvas with `scene:add-drawdy-elements` and preview commands. All variants share a common base:
+The elements you add to the canvas with `scene:add-drawdy-elements` and preview commands. All variants share a common base, which carries the full set of visual style overrides:
 
 ```ts
-type DrawdyElementCommon = {
-    drawdyElementId: string;
+type ElementStyle = {
     layer?: number;
-    meta?: Record<string, any>;
+    strokeColor?: string;
+    textColor?: string;
+    fillColor?: string;
+    strokeWidth?: number;
+    lineStrokeWidth?: number;
+    opacity?: number;
+    cornerRadius?: number;
+    strokeDash?: StrokeDash;
+    fillStyle?: FillStyle;
+    seed?: number;
+    roughness?: number;
 };
 
+interface DrawdyElementCommon extends ElementStyle {
+    drawdyElementId: string;
+    meta?: Record<string, any>;
+}
+
 type StrokeDash = "solid" | "dashed" | "dotted";
+type FillStyle = "solid" | "hachure" | "cross-hatch";
 type TextAlign = "left" | "center" | "right";
 
-type LineBinding = { elementId: string; anchorX: number; anchorY: number };
+type LineBinding = { drawdyElementId: string; anchorX: number; anchorY: number };
 
 type LineEndpoints = (
     | { from: [number, number] }
@@ -25,6 +40,8 @@ type LineEndpoints = (
 ) &
     ({ to: [number, number] } | { endBinding: LineBinding });
 ```
+
+Every `ElementStyle` field is optional and maps 1:1 onto the canvas element. Unset fields fall back to per-variant defaults (e.g. shapes get `roughness: 1` and `cornerRadius: 12`, lines and arrows get `roughness: 0`; `seed` is randomized). On `line`/`arrow`, `strokeColor` takes precedence over the variant's required `color`, and `strokeWidth` falls back to `lineStrokeWidth`. Match the user's theme by reading colors from [`ModuleStyling`](#modulestyling) (for example `styling.foreground` for connectors) instead of hardcoding them.
 
 ```ts
 type DrawdyElementSchema =
@@ -209,10 +226,10 @@ A **ring** or other circular shape is just a `box` with `borderRadius: [50, "%"]
 
 ## Element properties
 
-The property set you can read back from the scene and update on it.
+The property set you can read back from the scene and update on it. It includes every [`ElementStyle`](#drawdyelementschema) field, so a driver can read an element's look and reproduce it.
 
 ```ts
-type SubscribeableProperties = {
+interface SubscribeableProperties extends ElementStyle {
     type: string;
     componentType: string;
     meta: Record<string, unknown>;
@@ -224,7 +241,7 @@ type SubscribeableProperties = {
     points: [number, number][];
     rotation: number;
     text: string;
-};
+}
 
 type SubscribeableKey = keyof SubscribeableProperties;
 
@@ -232,19 +249,20 @@ type DrawdyElement = { id: string };
 type SubscribedDrawdyElement = DrawdyElement & Partial<SubscribeableProperties>;
 ```
 
-When you query or subscribe you pass a list of `SubscribeableKey`; each returned `SubscribedDrawdyElement` carries `id` plus exactly the properties you asked for.
+When you query or subscribe you pass a list of `SubscribeableKey`; each returned `SubscribedDrawdyElement` carries `id` plus exactly the properties you asked for. Style fields are only present when the element has them set. The package is type-only, so to request every style field build the key list yourself — a `Record<keyof ElementStyle, 0>` literal checked with `satisfies` gives you a compile-time-complete list to `Object.keys`.
 
 Updates are a partial patch:
 
 ```ts
-type UpdateableProperties = Partial<{
-    meta: Record<string, unknown>;
-    locked: boolean;
-    localAnimation: LocalAnimation | null;
-}>;
+type UpdateableProperties = ElementStyle &
+    Partial<{
+        meta: Record<string, unknown>;
+        locked: boolean;
+        localAnimation: LocalAnimation | null;
+    }>;
 ```
 
-`meta` merges into existing meta. `localAnimation` attaches (or, when `null`, clears) a declarative animation on the element.
+`meta` merges into existing meta. Style fields are set as given, so a driver can restyle existing elements (recolor, change stroke width, switch `fillStyle`) with `command:scene:update-drawdy-elements`. `localAnimation` attaches (or, when `null`, clears) a declarative animation on the element.
 
 ## LocalAnimation
 
