@@ -206,6 +206,11 @@ export type DriverCommand =
           { updated: number }
       >
     | ProtocolCommand<
+          "command:scene:get-image-source",
+          { drawdyElementId: string },
+          { blob: Blob }
+      >
+    | ProtocolCommand<
           "command:scene:remove-drawdy-elements",
           {
               drawdyElementIds: string[];

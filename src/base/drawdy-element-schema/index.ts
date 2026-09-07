@@ -44,12 +44,11 @@ export type DrawdyElementSchema =
     | LineSchema
     | (DrawdyElementCommon & {
           type: "image";
-          url: string;
           x: number;
           y: number;
           width: number;
           height: number;
-      })
+      } & ({ url: string; blob?: never } | { url?: never; blob: Blob }))
     | (DrawdyElementCommon & {
           type: "text";
           x: number;

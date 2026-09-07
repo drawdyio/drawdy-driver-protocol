@@ -96,12 +96,11 @@ type DrawdyElementSchema =
       } & LineEndpoints)
     | (DrawdyElementCommon & {
           type: "image";
-          url: string;
           x: number;
           y: number;
           width: number;
           height: number;
-      })
+      } & ({ url: string } | { blob: Blob }))
     | (DrawdyElementCommon & {
           type: "text";
           x: number;

@@ -1,9 +1,9 @@
 ---
 title: "Examples"
-description: "Five runnable drivers in the protocol repo, from a hello world to a full presentation tool, and the protocol surface each one uses."
+description: "Six runnable drivers in the protocol repo, from a hello world to a full presentation tool, and the protocol surface each one uses."
 ---
 
-The protocol repo ships five drivers under [`examples/`](https://github.com/drawdyio/drawdy-driver-protocol/tree/main/examples). Each is a Vite project with the same scripts: `dev` starts the dev server that Drawdy's development mode hot-reloads from, `build` packs `dist/<driver-id>.drawdyx` (dots in the id become dashes, so `drawdy.hello` builds `dist/drawdy-hello.drawdyx`), and `typecheck` runs `tsc`.
+The protocol repo ships six drivers under [`examples/`](https://github.com/drawdyio/drawdy-driver-protocol/tree/main/examples). Each is a Vite project with the same scripts: `dev` starts the dev server that Drawdy's development mode hot-reloads from, `build` packs `dist/<driver-id>.drawdyx` (dots in the id become dashes, so `drawdy.hello` builds `dist/drawdy-hello.drawdyx`), and `typecheck` runs `tsc`.
 
 From the repo root:
 
@@ -34,6 +34,20 @@ Shows drag-and-drop driven by the protocol's own [`subscription:dom:drag`](/prot
 - Area hit-testing on drop: `command:camera:get-info`, `command:scene:query-rect`, `command:scene:element-rects`.
 - [Local animation](/protocol/data-types#localanimation): `command:scene:update-drawdy-elements` with a `LocalAnimation` that flings each element radially and spins it, then `command:scene:remove-drawdy-elements` once the blast finishes.
 - Also `command:tools:set-active`.
+
+## Background Remover
+
+<Card title="drawdy-background-remover" icon="wand-magic-sparkles" href="https://github.com/drawdyio/drawdy-driver-protocol/tree/main/examples/drawdy-background-remover">
+  `drawdy.background-remover`: right-click a selected image and remove its background, entirely on-device.
+</Card>
+
+Shows a driver doing real compute inside the sandboxed worker. Segmentation runs on [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/)'s WebAssembly backend with the U²-Net family of models (`u2netp` for speed, `silueta` for quality), pulled from a CORS-enabled mirror and verified by SHA-256 before use. Shows:
+
+- [Context menus](/protocol/commands#context-menus) with children: `command:context-menu:add`, `subscription:context-menu:clicked`.
+- Reading the selection: `command:scene:get-current-selected-drawdy-elements`, `command:scene:get-drawdy-elements`.
+- [Image pixels in and out](/protocol/commands#scene-images): `command:scene:get-image-source`, then `command:scene:add-drawdy-elements` with a blob-sourced `image` placed beside the original.
+- A status toast built from `command:dom:create-floating-element` / `command:dom:remove-floating-element` and `command:dom:window-size`.
+- Loading a WebAssembly runtime in the worker with `importScripts`, decoding with `createImageBitmap` + `OffscreenCanvas`, and a pure, unit-tested pre/post-processing pipeline under `src/segment.ts`: `pnpm --filter drawdy-background-remover test`.
 
 ## Math Symbols
 
