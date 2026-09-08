@@ -11,7 +11,7 @@
         "typecheck": "tsc --noEmit"
     },
     "devDependencies": {
-        "@drawdy/driver-protocol": "workspace:*",
+        "@drawdy/driver-protocol": "latest",
         "@rollup/plugin-typescript": "^12.1.2",
         "@types/node": "^20",
         "fflate": "^0.8.2",

@@ -1,0 +1,7 @@
+{
+    "driverId": "drawdy.quick-add",
+    "driverName": "Quick Add",
+    "driverVersion": "0.1.0",
+    "description": "Select a shape and click a side dot to add a connected shape.",
+    "main": "main.js"
+}

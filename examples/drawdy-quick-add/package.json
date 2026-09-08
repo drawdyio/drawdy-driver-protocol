@@ -1,13 +1,13 @@
 {
-    "name": "drawdy-hello",
+    "name": "drawdy-quick-add",
     "version": "0.1.0",
-    "description": "Hello-world drawdy extension: sends exclaim:hello on instantiation.",
+    "description": "Private driver: FigJam-style quick-add dots around the selected element.",
     "license": "UNLICENSED",
     "private": true,
     "type": "module",
     "scripts": {
-        "dev": "vite",
         "build": "node build.ts",
+        "dev": "vite",
         "typecheck": "tsc --noEmit"
     },
     "devDependencies": {

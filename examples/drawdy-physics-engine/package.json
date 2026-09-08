@@ -12,7 +12,7 @@
         "test": "jest"
     },
     "devDependencies": {
-        "@drawdy/driver-protocol": "workspace:*",
+        "@drawdy/driver-protocol": "latest",
         "@rollup/plugin-typescript": "^12.1.2",
         "@swc/jest": "^0.2.39",
         "@types/jest": "^30.0.0",

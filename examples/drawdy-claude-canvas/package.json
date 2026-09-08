@@ -1,7 +1,7 @@
 {
-    "name": "drawdy-presentation",
+    "name": "drawdy-claude-canvas",
     "version": "0.1.0",
-    "description": "Presentation drawdy extension.",
+    "description": "Claude AI copilot drawdy extension.",
     "license": "UNLICENSED",
     "private": true,
     "type": "module",
@@ -9,11 +9,6 @@
         "dev": "vite",
         "build": "node build.ts",
         "typecheck": "tsc --noEmit"
-    },
-    "dependencies": {
-        "motion": "^12.38.0",
-        "react": "19.2.3",
-        "react-dom": "19.2.3"
     },
     "devDependencies": {
         "@drawdy/driver-protocol": "latest",
@@ -33,5 +28,9 @@
         "tslib": "^2.8.1",
         "typescript": "^5",
         "vite": "^8.2.1"
+    },
+    "dependencies": {
+        "react": "19.2.3",
+        "react-dom": "19.2.3"
     }
 }

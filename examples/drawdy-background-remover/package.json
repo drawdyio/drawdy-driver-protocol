@@ -1,20 +1,22 @@
 {
-    "name": "drawdy-hello",
+    "name": "drawdy-background-remover",
     "version": "0.1.0",
-    "description": "Hello-world drawdy extension: sends exclaim:hello on instantiation.",
+    "description": "Private driver: remove the background of selected images on-device with ONNX Runtime Web (WebAssembly).",
     "license": "UNLICENSED",
     "private": true,
     "type": "module",
     "scripts": {
-        "dev": "vite",
         "build": "node build.ts",
-        "typecheck": "tsc --noEmit"
+        "dev": "vite",
+        "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+        "test": "node --test \"src/**/*.test.ts\""
     },
     "devDependencies": {
         "@drawdy/driver-protocol": "latest",
         "@rollup/plugin-typescript": "^12.1.2",
         "@types/node": "^20",
         "fflate": "^0.8.2",
+        "onnxruntime-web": "1.29.0",
         "rollup": "^4.34.0",
         "tslib": "^2.8.1",
         "typescript": "^5",

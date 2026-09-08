@@ -1,7 +1,7 @@
 {
-    "name": "drawdy-hello",
+    "name": "drawdy-bomb",
     "version": "0.1.0",
-    "description": "Hello-world drawdy extension: sends exclaim:hello on instantiation.",
+    "description": "Private test driver: drag the bomb over elements and drop to blow them up.",
     "license": "UNLICENSED",
     "private": true,
     "type": "module",

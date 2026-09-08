@@ -1,7 +1,7 @@
 {
-    "name": "drawdy-hello",
+    "name": "drawdy-extension-starter",
     "version": "0.1.0",
-    "description": "Hello-world drawdy extension: sends exclaim:hello on instantiation.",
+    "description": "Drawdy extension starter template.",
     "license": "UNLICENSED",
     "private": true,
     "type": "module",
