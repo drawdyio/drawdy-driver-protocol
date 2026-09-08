@@ -32,9 +32,6 @@
         "docs:validate": "pnpm --filter drawdy-driver-protocol-docs validate"
     },
     "devDependencies": {
-        "@swc/jest": "^0.2.39",
-        "@types/jest": "^30.0.0",
-        "jest": "^30.0.0",
         "typescript": "^5"
     }
 }

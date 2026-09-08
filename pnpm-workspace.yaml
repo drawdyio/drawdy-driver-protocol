@@ -1,13 +1,12 @@
 packages:
-  - docs
-  - examples/*
+    - docs
 allowBuilds:
-  '@parcel/watcher': true
-  '@swc/core': true
-  keytar: true # OS keychain for `mint login`, which turns on search in the local docs preview
-  esbuild: true
-  sharp: true
-  unrs-resolver: true
-  # Also pulled in by the mint CLI, but not needed for dev, validate, or deploy.
-  '@scarf/scarf': false # install-time telemetry ping
-  puppeteer: false # downloads Chrome; only `mint a11y` uses it
+    "@parcel/watcher": true
+    "@swc/core": true
+    keytar: true # OS keychain for `mint login`, which turns on search in the local docs preview
+    esbuild: true
+    sharp: true
+    unrs-resolver: true
+    # Also pulled in by the mint CLI, but not needed for dev, validate, or deploy.
+    "@scarf/scarf": false # install-time telemetry ping
+    puppeteer: false # downloads Chrome; only `mint a11y` uses it
