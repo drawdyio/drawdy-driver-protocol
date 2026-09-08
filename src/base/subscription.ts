@@ -115,7 +115,10 @@ export type DriverSubscription =
           "subscription:scene:drawdy-element-selection",
           undefined
       >
-    | ProtocolSubscription<"subscription:scene:drag", undefined>;
+    | ProtocolSubscription<
+          "subscription:scene:drawdy-elements-dragged",
+          undefined
+      >;
 
 export type DriverSubscriptionEvent =
     | ProtocolSubscriptionEvent<
@@ -306,7 +309,7 @@ export type DriverSubscriptionEvent =
           }
       >
     | ProtocolSubscriptionEvent<
-          "subscription:scene:drag",
+          "subscription:scene:drawdy-elements-dragged",
           | {
                 type: "dragStart" | "dragging";
                 drawdyElementIds: string[];
