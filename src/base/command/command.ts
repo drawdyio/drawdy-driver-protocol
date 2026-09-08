@@ -1,7 +1,10 @@
 import { DistributiveOmit, ProtocolCommand } from "../base";
 import { ContextMenu } from "../context-menu";
 import { DomElementSchema } from "../dom-element-schema";
-import { DrawdyElementSchema } from "../drawdy-element-schema";
+import {
+    DrawdyElementSchema,
+    DrawdyPreviewElementSchema,
+} from "../drawdy-element-schema";
 import {
     SubscribeableKey,
     SubscribedDrawdyElement,
@@ -186,7 +189,7 @@ export type DriverCommand =
     | ProtocolCommand<
           "command:scene:create-drawdy-preview-elements",
           {
-              elements: DrawdyElementSchema[];
+              elements: DrawdyPreviewElementSchema[];
               hitTestable?: boolean;
           },
           { previewed: number; previewId: string }
@@ -201,7 +204,7 @@ export type DriverCommand =
     | ProtocolCommand<
           "command:scene:update-drawdy-preview-elements",
           {
-              elements: DrawdyElementSchema[];
+              elements: DrawdyPreviewElementSchema[];
           },
           { updated: number }
       >

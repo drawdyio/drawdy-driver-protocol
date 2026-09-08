@@ -71,3 +71,8 @@ export type DrawdyElementSchema =
           height: number;
           schema: DomElementSchema;
       });
+
+export type DrawdyPreviewElementSchema = Exclude<
+    DrawdyElementSchema,
+    { type: "image" }
+>;
