@@ -134,7 +134,7 @@ res: {
 
 `get-image-source` returns the element's **source** pixels at native resolution as a `Blob` (whatever the stored encoding is), not the cropped or scaled rendering. Errors: `not-found` if the id doesn't exist, `bad-argument` if it isn't an image, `runtime` if the bytes couldn't be loaded.
 
-To put pixels back on the canvas, add an `image` element whose source is a `blob` instead of a `url` (see [`DrawdyElementSchema`](/protocol/data-types#drawdyelementschema)) with `command:scene:add-drawdy-elements`. Blob-sourced images go through Drawdy's own image pipeline (local store, upload on cloud boards, one undo step, selected on insert) rather than the plain batch add, so two things differ from other elements: the element gets a Drawdy-minted id (your `drawdyElementId` is ignored), and style fields don't apply. `width`/`height` set the displayed size; `x`/`y` its top-left. Blob-sourced images can't be preview elements.
+To put pixels back on the canvas, add an `image` element whose source is a `blob` instead of a `url` (see [`DrawdyElementSchema`](/protocol/data-types#drawdyelementschema)) with `command:scene:add-drawdy-elements`. Blob-sourced images go through Drawdy's own image pipeline (processing, local store, upload on cloud boards, one undo step).
 
 ## Scene: preview elements
 
