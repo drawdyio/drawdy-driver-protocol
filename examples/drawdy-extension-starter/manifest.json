@@ -1,7 +1,0 @@
-{
-    "driverId": "drawdy.my-extension",
-    "driverName": "My Extension",
-    "driverVersion": "0.1.0",
-    "description": "A Drawdy extension.",
-    "main": "main.js"
-}
