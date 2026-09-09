@@ -28,7 +28,7 @@ export type WebviewToDriver =
     | { type: "insert-glyph"; glyph: string };
 
 /** driver -> webview */
-export type DriverToWebview = {
-    type: "init";
-    categories: SymbolCategory[];
-};
+export type DriverToWebview =
+    | { type: "init"; categories: SymbolCategory[] }
+    /** The host theme flipped; `css` is the new `--drawdy-*` declarations for `:root`. */
+    | { type: "theme"; css: string };

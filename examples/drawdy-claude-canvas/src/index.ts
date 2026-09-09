@@ -27,8 +27,8 @@ import {
     saveModel,
 } from "./storage";
 
-// Claude's spark.
-const ACTION_BUTTON_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="currentColor" class="text-white/60"><path d="M12 2l1.8 6.1a3 3 0 0 0 2.1 2.1L22 12l-6.1 1.8a3 3 0 0 0-2.1 2.1L12 22l-1.8-6.1a3 3 0 0 0-2.1-2.1L2 12l6.1-1.8a3 3 0 0 0 2.1-2.1L12 2z"></path></svg>`;
+// Claude's mark, in brand orange so it reads as Claude in the rail and drawer header.
+const ACTION_BUTTON_SVG = `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none"><path d="M7.66976 3.43944C7.49824 3.0964 7.0811 2.95735 6.73806 3.12888C6.39502 3.3004 6.25598 3.71753 6.4275 4.06057L8.38978 7.98513L5.1851 5.78192C4.86906 5.56464 4.43672 5.6447 4.21943 5.96075C4.00215 6.27679 4.08222 6.70914 4.39826 6.92642L8.19794 9.53868L3.78651 9.30653C3.40351 9.28639 3.07669 9.58049 3.05653 9.96347C3.03638 10.3465 3.33051 10.6733 3.71352 10.6935L7.73741 10.9053L4.75369 12.8944C4.43458 13.1072 4.34835 13.5383 4.56109 13.8574C4.77384 14.1765 5.205 14.2628 5.52412 14.0501L8.05338 12.3639L6.30992 14.8047C6.087 15.1168 6.15929 15.5505 6.47138 15.7734C6.78347 15.9963 7.21719 15.9241 7.44011 15.6119L9.5466 12.6628L8.96778 16.1358C8.90472 16.5142 9.16035 16.8719 9.53861 16.935C9.91694 16.9981 10.2747 16.7425 10.3378 16.3642L10.8947 13.0231L12.5408 15.5839C12.7483 15.9065 13.1779 15.9999 13.5006 15.7925C13.8232 15.5851 13.9166 15.1554 13.7092 14.8328L12.469 12.9036L14.3901 14.6769C14.6719 14.9371 15.1113 14.9195 15.3714 14.6377C15.6315 14.3559 15.614 13.9165 15.3322 13.6564L13.2241 11.7105L16.1639 12.078C16.5444 12.1256 16.8915 11.8556 16.9391 11.475C16.9867 11.0944 16.7167 10.7474 16.3362 10.6998L13.4265 10.3361L16.4091 9.63431C16.7824 9.54646 17.0138 9.17264 16.926 8.7993C16.8381 8.42594 16.4643 8.19451 16.091 8.28235L12.2097 9.19562L15.0599 5.56794C15.2969 5.26636 15.2445 4.82979 14.9429 4.59284C14.6414 4.35588 14.2048 4.40827 13.9678 4.70985L11.2899 8.11816L11.9014 4.20443C11.9606 3.8255 11.7015 3.47031 11.3225 3.4111C10.9435 3.3519 10.5884 3.61108 10.5292 3.99002L9.91389 7.92774L7.66976 3.43944Z" fill="#E96C48"/></svg>`;
 
 let requestId = 0;
 
@@ -140,6 +140,7 @@ export const onEvent: DriverModule["onEvent"] = async (e) => {
     switch (e.type) {
         case "subscription:dom:theme-changed": {
             driver.styling = e.body.styling;
+            post({ type: "theme", theme: e.body.styling.theme });
             return;
         }
         case "subscription:dom:element-clicked": {
@@ -157,6 +158,7 @@ export const onEvent: DriverModule["onEvent"] = async (e) => {
                     keepStateWhenClosed: true,
                 },
             });
+            post({ type: "theme", theme: driver.styling.theme });
             return;
         }
         case "subscription:webview:message": {
@@ -187,6 +189,7 @@ function postInit(): void {
     const { chat } = driver;
     post({
         type: "init",
+        theme: driver.styling.theme,
         hasApiKey: chat.apiKey !== null,
         model: chat.model,
         entries: chat.entries,

@@ -1,5 +1,51 @@
 @import "tailwindcss";
 
+:root {
+    --cc-claude: #e96c48;
+    --cc-claude-hover: #d95f3b;
+    --cc-panel: #212125;
+    --cc-text: rgb(255 255 255 / 0.95);
+    --cc-text-muted: rgb(255 255 255 / 0.8);
+    --cc-text-subtle: rgb(255 255 255 / 0.6);
+    --cc-icon: rgb(255 255 255 / 0.5);
+    --cc-border: rgb(255 255 255 / 0.15);
+    --cc-border-strong: rgb(255 255 255 / 0.4);
+    --cc-divider: rgb(255 255 255 / 0.06);
+    --cc-field: #27272a;
+    --cc-composer: #27272a;
+    --cc-chip: rgb(255 255 255 / 0.1);
+    --cc-chip-hover: rgb(255 255 255 / 0.16);
+    --cc-bubble: rgb(255 255 255 / 0.08);
+    --cc-menu: #27272a;
+    --cc-link: #ffcf99;
+    --cc-error: #fb3748;
+    --cc-warning: #f5c453;
+    --cc-success-bg: #4b6b1b;
+    --cc-success-fg: #ffffff;
+}
+
+:root[data-theme="light"] {
+    --cc-panel: #ffffff;
+    --cc-text: rgb(0 0 0 / 0.9);
+    --cc-text-muted: #52525b;
+    --cc-text-subtle: #71717a;
+    --cc-icon: rgb(9 9 11 / 0.5);
+    --cc-border: rgb(9 9 11 / 0.17);
+    --cc-border-strong: rgb(9 9 11 / 0.4);
+    --cc-divider: rgb(9 9 11 / 0.06);
+    --cc-field: #ffffff;
+    --cc-composer: #f4f4f5;
+    --cc-chip: rgb(9 9 11 / 0.06);
+    --cc-chip-hover: rgb(9 9 11 / 0.1);
+    --cc-bubble: rgb(9 9 11 / 0.06);
+    --cc-menu: #ffffff;
+    --cc-link: #a8471a;
+    --cc-error: #d02533;
+    --cc-warning: #a16207;
+    --cc-success-bg: #e3f7c1;
+    --cc-success-fg: #2f4a0a;
+}
+
 html,
 body,
 #root {
@@ -8,9 +54,10 @@ body,
 
 body {
     margin: 0;
-    background: var(--drawdy-background);
-    color: var(--drawdy-foreground);
+    background: var(--cc-panel);
+    color: var(--cc-text);
     font-family:
+        "Google Sans Flex",
         ui-sans-serif,
         system-ui,
         -apple-system,

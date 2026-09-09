@@ -12,6 +12,8 @@ export const DEFAULT_MODEL: ModelId = "claude-sonnet-5";
 
 export type ModelId = (typeof MODELS)[number]["id"];
 
+export type Theme = "dark" | "light";
+
 export type ChatEntry = {
     role: "user" | "assistant";
     text: string;
@@ -31,6 +33,7 @@ export type WebviewToDriver =
 export type DriverToWebview =
     | {
           type: "init";
+          theme: Theme;
           hasApiKey: boolean;
           model: ModelId;
           entries: ChatEntry[];
@@ -38,6 +41,7 @@ export type DriverToWebview =
           /** Present when the API key could not be persisted (e.g. signed out). */
           keyNotice?: string;
       }
+    | { type: "theme"; theme: Theme }
     | { type: "turn-status"; label: string }
     | { type: "assistant-message"; text: string }
     | { type: "turn-done" }

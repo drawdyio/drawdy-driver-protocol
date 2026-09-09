@@ -4,14 +4,15 @@
  * runtime; the symbol catalog arrives via the `init` message.
  *
  * `:root { /*__DRAWDY_STYLING__* / }` is filled with the current theme's
- * `--drawdy-*` css variables when the driver creates the webview.
+ * `--drawdy-*` css variables when the driver creates the webview; a `theme`
+ * message swaps them in place when the host theme changes.
  */
 export const WEBVIEW_HTML = `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<style>:root{/*__DRAWDY_STYLING__*/}</style>
+<style id="theme">:root{/*__DRAWDY_STYLING__*/}</style>
 <style>
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
@@ -23,32 +24,24 @@ body {
     flex-direction: column;
     height: 100vh;
 }
-header {
-    padding: 10px 12px 8px;
-    border-bottom: 1px solid var(--drawdy-border, #e5e5e5);
-}
-.hint { font-size: 11px; color: var(--drawdy-muted-foreground, #888); margin: 0 0 6px; }
-.tip { font-size: 11px; color: var(--drawdy-muted-foreground, #888); margin: 0 0 8px; line-height: 1.5; }
-.tip code, .tip kbd {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 10px;
-    padding: 1px 4px;
-    border-radius: 4px;
-    background: var(--drawdy-surface, #f4f4f4);
-    border: 1px solid var(--drawdy-border, #e5e5e5);
-    color: var(--drawdy-foreground, #111);
-}
+header { padding: 12px 12px 4px; }
 #search {
     width: 100%;
-    padding: 7px 10px;
-    font-size: 13px;
+    height: 32px;
+    padding: 4px 10px;
+    font: inherit;
+    font-size: 14px;
     color: var(--drawdy-foreground, #111);
-    background: var(--drawdy-input, var(--drawdy-surface, #f4f4f4));
+    background: var(--drawdy-surface, #fff);
     border: 1px solid var(--drawdy-border, #e5e5e5);
-    border-radius: var(--drawdy-radius-md, 8px);
+    border-radius: var(--drawdy-radius-lg, 12px);
     outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
-#search:focus { border-color: var(--drawdy-ring, var(--drawdy-primary, #6366f1)); }
+#search::placeholder { color: var(--drawdy-muted-foreground, #888); font-weight: 500; }
+#search:focus-visible {
+    box-shadow: 0 0 0 2px var(--drawdy-background, #fff), 0 0 0 4px var(--drawdy-ring, #94ba00);
+}
 main { flex: 1; overflow-y: auto; padding: 8px 12px 16px; }
 .cat-label {
     font-size: 11px;
@@ -89,8 +82,6 @@ main { flex: 1; overflow-y: auto; padding: 8px 12px 16px; }
 </head>
 <body>
 <header>
-    <p class="hint">Drag a symbol onto the canvas, or click to drop it at the center.</p>
-    <p class="tip">Or type it: while editing text, write a LaTeX command like <code>\alpha</code> or <code>\sum</code> and press <kbd>Tab</kbd> to swap it for the symbol.</p>
     <input id="search" type="text" placeholder="Search (sum, alpha, integral…)" autocomplete="off" />
 </header>
 <main id="list"></main>
@@ -102,6 +93,7 @@ main { flex: 1; overflow-y: auto; padding: 8px 12px 16px; }
 
     var list = document.getElementById("list");
     var search = document.getElementById("search");
+    var themeStyle = document.getElementById("theme");
 
     function matches(entry, q) {
         if (!q) return true;
@@ -215,7 +207,12 @@ main { flex: 1; overflow-y: auto; padding: 8px 12px 16px; }
     });
 
     api.onMessage(function (raw) {
-        if (!raw || raw.type !== "init") return;
+        if (!raw) return;
+        if (raw.type === "theme") {
+            themeStyle.textContent = ":root{" + raw.css + "}";
+            return;
+        }
+        if (raw.type !== "init") return;
         CATEGORIES = raw.categories || [];
         render();
     });

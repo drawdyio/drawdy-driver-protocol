@@ -10,7 +10,7 @@ import { CATEGORIES } from "./symbols";
 import { WEBVIEW_HTML } from "./webview-html";
 
 // Sigma, sketched like a drop shadow.
-const ACTION_BUTTON_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white/70"><path d="M18 4H6l7 8-7 8h12"/></svg>`;
+const ACTION_BUTTON_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="#87a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 4H6l7 8-7 8h12"/></svg>`;
 
 /** How long the typed text must settle before we re-interpret it as latex. */
 const LATEX_DEBOUNCE_MS = 100;
@@ -141,11 +141,12 @@ export const onEvent: DriverModule["onEvent"] = async (e) => {
     switch (e.type) {
         case "subscription:dom:theme-changed": {
             driver.styling = e.body.styling;
+            post({ type: "theme", css: stylingCssVars(driver.styling) });
             return;
         }
         case "subscription:dom:element-clicked": {
             if (e.body.domElementId !== driver.actionButtonId) return;
-            await driver.issueCommand({
+            const res = await driver.issueCommand({
                 type: "command:webview:create",
                 driverId: driver.manifest.driverId,
                 requestId: nextRequestId(),
@@ -158,6 +159,10 @@ export const onEvent: DriverModule["onEvent"] = async (e) => {
                     keepStateWhenClosed: true,
                 },
             });
+            if (driver && res.res.value?.created === false) {
+                // Re-showing the kept-alive palette: its baked-in vars may predate a theme flip.
+                post({ type: "theme", css: stylingCssVars(driver.styling) });
+            }
             return;
         }
         case "subscription:webview:message": {
