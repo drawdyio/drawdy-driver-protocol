@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
+    Attachment,
+    AttachmentMeta,
     ChatEntry,
     DEFAULT_MODEL,
     DriverToWebview,
@@ -12,7 +14,13 @@ const drawdy = acquireDrawdyApi();
 
 type Item = ChatEntry | { role: "error"; text: string };
 
+type PendingFile = Attachment & { id: string; previewUrl: string | null };
+
 const API_KEY_PATTERN = /^sk-ant-[A-Za-z0-9_-]{20,}$/;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const MAX_FILES = 8;
+const ACCEPT_FILES =
+    "image/png,image/jpeg,image/webp,image/gif,application/pdf,text/*,.md,.csv,.json,.ts,.tsx,.js,.py";
 
 function applyTheme(theme: Theme) {
     document.documentElement.dataset.theme = theme;
@@ -25,9 +33,37 @@ function greeting(): string {
     return "this evening";
 }
 
+function isImage(mediaType: string): boolean {
+    return mediaType.startsWith("image/");
+}
+
+function formatSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function readAttachment(file: File): Promise<Attachment> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const url = reader.result as string;
+            resolve({
+                name: file.name,
+                mediaType: file.type || "text/plain",
+                size: file.size,
+                data: url.slice(url.indexOf(",") + 1),
+            });
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+    });
+}
+
 export function App() {
     const [booted, setBooted] = useState(false);
-    const [hasApiKey, setHasApiKey] = useState(false);
+    const [apiKey, setApiKey] = useState<string | null>(null);
+    const [showConnect, setShowConnect] = useState(false);
     const [keyNotice, setKeyNotice] = useState<string | undefined>(undefined);
     const [model, setModel] = useState<ModelId>(DEFAULT_MODEL);
     const [items, setItems] = useState<Item[]>([]);
@@ -41,7 +77,8 @@ export function App() {
                 case "init": {
                     applyTheme(message.theme);
                     setBooted(true);
-                    setHasApiKey(message.hasApiKey);
+                    setApiKey(message.apiKey);
+                    if (message.apiKey !== null) setShowConnect(false);
                     setKeyNotice(message.keyNotice);
                     setModel(message.model);
                     setItems(message.entries);
@@ -88,12 +125,17 @@ export function App() {
         );
     }
 
-    if (!hasApiKey) {
+    if (apiKey === null || showConnect) {
         return (
             <ConnectPanel
-                onConnect={(apiKey) =>
-                    drawdy.postMessage({ type: "set-api-key", apiKey })
-                }
+                savedKey={apiKey}
+                onConnect={(next) => {
+                    if (next === apiKey) {
+                        setShowConnect(false);
+                        return;
+                    }
+                    drawdy.postMessage({ type: "set-api-key", apiKey: next });
+                }}
             />
         );
     }
@@ -109,24 +151,39 @@ export function App() {
                 setModel(next);
                 drawdy.postMessage({ type: "set-model", model: next });
             }}
-            onNewChat={() => {
-                setItems([]);
-                setRunning(false);
-                drawdy.postMessage({ type: "clear-conversation" });
-            }}
-            onSend={(text) => {
-                setItems((prev) => [...prev, { role: "user", text }]);
+            onBack={() => setShowConnect(true)}
+            onSend={(text, attachments) => {
+                setItems((prev) => [
+                    ...prev,
+                    {
+                        role: "user",
+                        text,
+                        attachments: attachments.map(
+                            ({ name, mediaType, size }) => ({
+                                name,
+                                mediaType,
+                                size,
+                            })
+                        ),
+                    },
+                ]);
                 setRunning(true);
                 setStatus("Thinking…");
-                drawdy.postMessage({ type: "chat", text });
+                drawdy.postMessage({ type: "chat", text, attachments });
             }}
             onStop={() => drawdy.postMessage({ type: "stop" })}
         />
     );
 }
 
-function ConnectPanel({ onConnect }: { onConnect: (apiKey: string) => void }) {
-    const [value, setValue] = useState("");
+function ConnectPanel({
+    savedKey,
+    onConnect,
+}: {
+    savedKey: string | null;
+    onConnect: (apiKey: string) => void;
+}) {
+    const [value, setValue] = useState(savedKey ?? "");
     const [revealed, setRevealed] = useState(false);
     const [invalid, setInvalid] = useState(false);
 
@@ -238,7 +295,7 @@ function ChatPanel({
     model,
     keyNotice,
     onModelChange,
-    onNewChat,
+    onBack,
     onSend,
     onStop,
 }: {
@@ -248,11 +305,14 @@ function ChatPanel({
     model: ModelId;
     keyNotice: string | undefined;
     onModelChange: (model: ModelId) => void;
-    onNewChat: () => void;
-    onSend: (text: string) => void;
+    onBack: () => void;
+    onSend: (text: string, attachments: Attachment[]) => void;
     onStop: () => void;
 }) {
     const [input, setInput] = useState("");
+    const [files, setFiles] = useState<PendingFile[]>([]);
+    const [fileError, setFileError] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const bottomRef = useRef<HTMLDivElement>(null);
     const empty = items.length === 0 && !running;
 
@@ -260,19 +320,79 @@ function ChatPanel({
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [items, running]);
 
+    useEffect(() => {
+        return () => files.forEach((f) => f.previewUrl && URL.revokeObjectURL(f.previewUrl));
+        // Only on unmount; per-file URLs are revoked on removal below.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const addFiles = async (picked: FileList | null) => {
+        if (!picked) return;
+        const list = Array.from(picked);
+        const room = MAX_FILES - files.length;
+        if (list.length > room) {
+            setFileError(`You can attach up to ${MAX_FILES} files.`);
+        }
+        const accepted = list.slice(0, Math.max(0, room));
+        const tooBig = accepted.filter((f) => f.size > MAX_FILE_BYTES);
+        if (tooBig.length > 0) {
+            setFileError(
+                `${tooBig[0].name} is larger than ${formatSize(MAX_FILE_BYTES)}.`
+            );
+        }
+        const next = await Promise.all(
+            accepted
+                .filter((f) => f.size <= MAX_FILE_BYTES)
+                .map(async (file) => ({
+                    ...(await readAttachment(file)),
+                    id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
+                    previewUrl: isImage(file.type)
+                        ? URL.createObjectURL(file)
+                        : null,
+                }))
+        );
+        setFiles((prev) => [...prev, ...next]);
+    };
+
+    const removeFile = (id: string) => {
+        setFiles((prev) => {
+            const target = prev.find((f) => f.id === id);
+            if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+            return prev.filter((f) => f.id !== id);
+        });
+    };
+
+    const canSend = (input.trim().length > 0 || files.length > 0) && !running;
+
     const send = () => {
+        if (!canSend) return;
         const text = input.trim();
-        if (text.length === 0 || running) return;
+        const attachments = files.map(({ id: _id, previewUrl: _p, ...a }) => a);
+        files.forEach((f) => f.previewUrl && URL.revokeObjectURL(f.previewUrl));
         setInput("");
-        onSend(text);
+        setFiles([]);
+        setFileError(null);
+        onSend(text, attachments);
     };
 
     const rows = Math.min(5, Math.max(1, input.split("\n").length));
 
     return (
         <div className="relative flex h-full flex-col">
+            <div className="flex items-center px-2 pt-1">
+                <button
+                    type="button"
+                    title="API key"
+                    aria-label="API key"
+                    className="grid size-8 cursor-pointer place-items-center rounded-md text-(--cc-icon) transition-colors hover:bg-(--cc-chip) hover:text-(--cc-text)"
+                    onClick={onBack}
+                >
+                    <ChevronLeftIcon />
+                </button>
+            </div>
+
             {keyNotice && (
-                <div className="mx-4 mt-3 rounded-lg bg-(--cc-chip) px-3 py-2 text-xs text-(--cc-warning)">
+                <div className="mx-4 mt-1 rounded-lg bg-(--cc-chip) px-3 py-2 text-xs text-(--cc-warning)">
                     {keyNotice}
                 </div>
             )}
@@ -305,6 +425,26 @@ function ChatPanel({
 
             <div className="p-4 pt-0">
                 <div className="flex flex-col gap-2 rounded-[20px] bg-(--cc-composer) p-3 shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
+                    {files.length > 0 && (
+                        <div className="flex flex-wrap gap-2 px-1 pt-1">
+                            {files.map((file) => (
+                                <FileChip
+                                    key={file.id}
+                                    file={file}
+                                    onRemove={() => removeFile(file.id)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                    {fileError && (
+                        <p
+                            role="alert"
+                            className="flex items-center gap-1 px-1 text-xs text-(--cc-error)"
+                        >
+                            <InfoIcon />
+                            {fileError}
+                        </p>
+                    )}
                     <textarea
                         rows={rows}
                         placeholder="Chat with Claude"
@@ -320,12 +460,25 @@ function ChatPanel({
                         }}
                     />
                     <div className="flex items-center gap-2">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            multiple
+                            accept={ACCEPT_FILES}
+                            className="hidden"
+                            onChange={(e) => {
+                                setFileError(null);
+                                void addFiles(e.target.files);
+                                e.target.value = "";
+                            }}
+                        />
                         <button
                             type="button"
-                            title="New chat"
-                            aria-label="New chat"
-                            className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full bg-(--cc-chip) text-(--cc-text) transition-colors hover:bg-(--cc-chip-hover)"
-                            onClick={onNewChat}
+                            title="Attach files"
+                            aria-label="Attach files"
+                            className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full bg-(--cc-chip) text-(--cc-text) transition-colors hover:bg-(--cc-chip-hover) disabled:cursor-default disabled:opacity-40"
+                            disabled={running || files.length >= MAX_FILES}
+                            onClick={() => fileInputRef.current?.click()}
                         >
                             <PlusIcon />
                         </button>
@@ -347,7 +500,7 @@ function ChatPanel({
                                 title="Send"
                                 aria-label="Send"
                                 className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full bg-(--cc-claude) text-white transition-colors hover:bg-(--cc-claude-hover) disabled:cursor-default disabled:opacity-40"
-                                disabled={input.trim().length === 0}
+                                disabled={!canSend}
                                 onClick={send}
                             >
                                 <ArrowUpIcon />
@@ -356,7 +509,60 @@ function ChatPanel({
                     </div>
                 </div>
             </div>
+        </div>
+    );
+}
 
+function FileChip({
+    file,
+    onRemove,
+}: {
+    file: PendingFile;
+    onRemove: () => void;
+}) {
+    return (
+        <div className="group relative flex max-w-full items-center gap-2 rounded-xl bg-(--cc-chip) p-1.5 pr-2 text-xs text-(--cc-text)">
+            {file.previewUrl ? (
+                <img
+                    src={file.previewUrl}
+                    alt=""
+                    className="size-9 shrink-0 rounded-lg object-cover"
+                />
+            ) : (
+                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-(--cc-bubble) text-(--cc-icon)">
+                    <FileIcon />
+                </span>
+            )}
+            <div className="min-w-0">
+                <div className="max-w-40 truncate font-medium">{file.name}</div>
+                <div className="text-(--cc-text-subtle)">
+                    {formatSize(file.size)}
+                </div>
+            </div>
+            <button
+                type="button"
+                aria-label={`Remove ${file.name}`}
+                className="absolute -top-1.5 -right-1.5 grid size-5 cursor-pointer place-items-center rounded-full bg-(--cc-menu) text-(--cc-text-muted) shadow-[0_1px_3px_rgba(0,0,0,0.3)] transition-colors hover:text-(--cc-text)"
+                onClick={onRemove}
+            >
+                <CloseIcon size={12} />
+            </button>
+        </div>
+    );
+}
+
+function AttachmentList({ attachments }: { attachments: AttachmentMeta[] }) {
+    return (
+        <div className="flex flex-wrap justify-end gap-1.5">
+            {attachments.map((a, i) => (
+                <span
+                    key={`${a.name}-${i}`}
+                    className="flex max-w-full items-center gap-1 rounded-lg bg-(--cc-chip) px-2 py-1 text-xs text-(--cc-text-muted)"
+                >
+                    <FileIcon size={12} />
+                    <span className="max-w-48 truncate">{a.name}</span>
+                </span>
+            ))}
         </div>
     );
 }
@@ -396,8 +602,15 @@ function ModelPill({
 function Bubble({ item }: { item: Item }) {
     if (item.role === "user") {
         return (
-            <div className="ml-8 self-end rounded-2xl rounded-br-md bg-(--cc-bubble) px-3 py-2 text-sm leading-5 whitespace-pre-wrap text-(--cc-text)">
-                {item.text}
+            <div className="ml-8 flex flex-col items-end gap-1.5 self-end">
+                {item.attachments && item.attachments.length > 0 && (
+                    <AttachmentList attachments={item.attachments} />
+                )}
+                {item.text.length > 0 && (
+                    <div className="rounded-2xl rounded-br-md bg-(--cc-bubble) px-3 py-2 text-sm leading-5 whitespace-pre-wrap text-(--cc-text)">
+                        {item.text}
+                    </div>
+                )}
             </div>
         );
     }
@@ -489,3 +702,29 @@ function StopIcon() {
 }
 
 
+
+
+
+function FileIcon({ size = 18 }: { size?: number }) {
+    return (
+        <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden>
+            <path d="M9 2.003V2h10.998C20.55 2 21 2.455 21 2.992v18.016a.993.993 0 0 1-.993.992H3.993A1 1 0 0 1 3 20.993V8l6-5.997zM5.83 8H9V4.83L5.83 8zM11 4v5a1 1 0 0 1-1 1H5v10h14V4h-8z" />
+        </svg>
+    );
+}
+
+function CloseIcon({ size = 18 }: { size?: number }) {
+    return (
+        <svg viewBox="0 0 18 18" width={size} height={size} fill="currentColor" aria-hidden>
+            <path d="M9 8.04555L12.3413 4.7043L13.2957 5.65875L9.95445 9L13.2957 12.3413L12.3413 13.2957L9 9.95445L5.65875 13.2957L4.7043 12.3413L8.04555 9L4.7043 5.65875L5.65875 4.7043L9 8.04555Z" />
+        </svg>
+    );
+}
+
+function ChevronLeftIcon() {
+    return (
+        <svg viewBox="0 0 24 24" width={18} height={18} fill="currentColor" aria-hidden>
+            <path d="M10.828 12l4.95 4.95-1.414 1.414L8 12l6.364-6.364 1.414 1.414-4.95 4.95z" />
+        </svg>
+    );
+}

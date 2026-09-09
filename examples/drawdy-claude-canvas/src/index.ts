@@ -6,6 +6,7 @@ import {
 } from "@drawdy/driver-protocol";
 import { WEBVIEW_HTML } from "virtual:webview-html";
 import {
+    Attachment,
     ChatEntry,
     DEFAULT_MODEL,
     DriverToWebview,
@@ -14,7 +15,7 @@ import {
     WebviewToDriver,
 } from "../shared/messages";
 import { buildSystemPrompt, runTurn } from "./agent";
-import { ApiMessage } from "./anthropic";
+import { ApiMessage, ContentBlock, ImageMediaType } from "./anthropic";
 import { DriverContext } from "./driver-context";
 import {
     clearConversation,
@@ -190,7 +191,7 @@ function postInit(): void {
     post({
         type: "init",
         theme: driver.styling.theme,
-        hasApiKey: chat.apiKey !== null,
+        apiKey: chat.apiKey,
         model: chat.model,
         entries: chat.entries,
         running: chat.running,
@@ -238,7 +239,8 @@ async function handleWebviewMessage(message: WebviewToDriver): Promise<void> {
                 await saveApiKey(ctx, apiKey);
                 chat.keyNotice = undefined;
             } catch (err) {
-                chat.keyNotice = `${err instanceof Error ? err.message : String(err)} — your key is kept for this session only.`;
+                chat.keyNotice =
+                    "Permission to store the key is denied. — your key is kept for this session only.";
             }
             postInit();
             return;
@@ -281,17 +283,66 @@ async function handleWebviewMessage(message: WebviewToDriver): Promise<void> {
             return;
         }
         case "chat": {
-            await handleChat(message.text);
+            await handleChat(message.text, message.attachments ?? []);
             return;
         }
     }
 }
 
-async function handleChat(rawText: string): Promise<void> {
+const IMAGE_MEDIA_TYPES: ReadonlySet<string> = new Set<ImageMediaType>([
+    "image/png",
+    "image/jpeg",
+    "image/webp",
+    "image/gif",
+]);
+
+function decodeBase64Utf8(data: string): string {
+    const bytes = Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+}
+
+function attachmentBlock(attachment: Attachment): ContentBlock {
+    if (IMAGE_MEDIA_TYPES.has(attachment.mediaType)) {
+        return {
+            type: "image",
+            source: {
+                type: "base64",
+                media_type: attachment.mediaType as ImageMediaType,
+                data: attachment.data,
+            },
+        };
+    }
+    if (attachment.mediaType === "application/pdf") {
+        return {
+            type: "document",
+            source: {
+                type: "base64",
+                media_type: "application/pdf",
+                data: attachment.data,
+            },
+            title: attachment.name,
+        };
+    }
+    let body: string;
+    try {
+        body = decodeBase64Utf8(attachment.data);
+    } catch {
+        body = "[binary file could not be read as text]";
+    }
+    return {
+        type: "text",
+        text: `Attached file "${attachment.name}":\n\n${body}`,
+    };
+}
+
+async function handleChat(
+    rawText: string,
+    attachments: Attachment[]
+): Promise<void> {
     if (!driver) return;
     const { chat, ctx } = driver;
     const text = rawText.trim();
-    if (text.length === 0 || chat.running) return;
+    if ((text.length === 0 && attachments.length === 0) || chat.running) return;
     if (!chat.apiKey) {
         post({
             type: "turn-error",
@@ -301,8 +352,18 @@ async function handleChat(rawText: string): Promise<void> {
         return;
     }
 
-    chat.entries.push({ role: "user", text });
-    chat.apiMessages.push({ role: "user", content: [{ type: "text", text }] });
+    const content: ContentBlock[] = attachments.map(attachmentBlock);
+    if (text.length > 0) content.push({ type: "text", text });
+    chat.entries.push({
+        role: "user",
+        text,
+        attachments: attachments.map(({ name, mediaType, size }) => ({
+            name,
+            mediaType,
+            size,
+        })),
+    });
+    chat.apiMessages.push({ role: "user", content });
     chat.running = true;
     chat.abort = new AbortController();
 

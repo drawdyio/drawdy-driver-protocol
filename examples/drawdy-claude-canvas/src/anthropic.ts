@@ -19,6 +19,12 @@ export type ImageBlock = {
     source: { type: "base64"; media_type: ImageMediaType; data: string };
 };
 
+export type DocumentBlock = {
+    type: "document";
+    source: { type: "base64"; media_type: "application/pdf"; data: string };
+    title?: string;
+};
+
 export type ToolUseBlock = {
     type: "tool_use";
     id: string;
@@ -33,7 +39,7 @@ export type ToolResultBlock = {
     is_error?: boolean;
 };
 
-export type ContentBlock = TextBlock | ImageBlock | ToolUseBlock;
+export type ContentBlock = TextBlock | ImageBlock | DocumentBlock | ToolUseBlock;
 
 export type ApiMessage = {
     role: "user" | "assistant";
