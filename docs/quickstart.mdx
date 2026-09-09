@@ -119,11 +119,12 @@ Every extension declares a `manifest.json`:
     "driverId": "drawdy.my-extension",
     "driverName": "My Extension",
     "description": "A Drawdy extension.",
-    "main": "main.js"
+    "main": "main.js",
+    "permissions": ["dom", "scene"]
 }
 ```
 
-`main` is the entry bundle inside the `.drawdyx` zip. `driverId` is the stable identity Drawdy uses for install, storage, and command routing.
+`main` is the entry bundle inside the `.drawdyx` zip. `driverId` is the stable identity Drawdy uses for install, storage, and command routing. `permissions` declares what the driver may do; the starter adds a context menu (`dom`) and draws on the canvas (`scene`). Drawdy asks the user to grant each one the first time a command needs it. See [Permissions](/protocol/permissions).
 
 ## 4. Run it in development
 

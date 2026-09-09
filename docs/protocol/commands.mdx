@@ -1,9 +1,9 @@
 ---
 title: "Commands"
-description: "Every command a driver can issue to Drawdy, with its request and response types."
+description: "Every command a driver can issue to Drawdy, with its request and response types and the permission it needs."
 ---
 
-Commands flow from the driver to Drawdy. Each entry below lists the `type`, its request `req`, and its response `res.value`. A dash means none.
+Commands flow from the driver to Drawdy. Each entry below lists the `type`, its request `req`, and its response `res.value`. A dash means none. Each section also names the [permission](/protocol/permissions) its commands need; a command issued without it fails with an `unauthorized` error.
 
 ## Typing a command
 
@@ -26,6 +26,8 @@ type CameraInfoResponse = Extract<
 ```
 
 ## Camera
+
+No permission is required for the commands in this section.
 
 ```ts
 "command:camera:get-info"
@@ -56,6 +58,8 @@ res: { rect: { x: number; y: number; width: number; height: number } }
 `fly-to-rect`'s `zoom` is the maximum zoom; the camera fits the rect. `get-viewport-rect` returns the visible canvas area in canvas coordinates.
 
 ## Scene: elements
+
+The commands in this section require the [`scene`](/protocol/permissions) permission.
 
 ```ts
 "command:scene:add-drawdy-elements"
@@ -120,6 +124,8 @@ res: { png: Blob }
 
 ## Scene: images
 
+The commands in this section require the [`scene`](/protocol/permissions) permission.
+
 Read the pixels behind an `image` element. This is the input side for drivers that transform images (background removal, filters, upscaling): the driver never needs a URL it can fetch itself, which matters because image sources can also be local file urls which the workers can't access directly.
 
 ```ts
@@ -137,6 +143,8 @@ res: {
 To put pixels back on the canvas, add an `image` element whose source is a `blob` instead of a `url` (see [`DrawdyElementSchema`](/protocol/data-types#drawdyelementschema)) with `command:scene:add-drawdy-elements`. Blob-sourced images go through Drawdy's own image pipeline (processing, local store, upload on cloud boards, one undo step).
 
 ## Scene: preview elements
+
+The commands in this section require the [`scene`](/protocol/permissions) permission.
 
 Preview elements are ephemeral: they render but are not committed to the scene, so they never persist, sync, or survive a refresh.
 
@@ -159,6 +167,8 @@ res: { updated: number }
 By default preview elements are purely visual: the pointer passes through them and they never appear in [`scene:pointer`](/protocol/subscriptions#scene-events) or [`scene:click`](/protocol/subscriptions#scene-events). Pass `hitTestable: true` to register them for hit-testing — they then report `enter`/`out`/`down`/`up` and clicks under their `drawdyElementId` like any scene element, while staying uncommitted. Pressing a hit-testable preview element does not select it or disturb the current selection, which makes them the right primitive for ephemeral on-canvas controls (handles, quick-add dots, hover targets).
 
 ## Scene: preview transforms
+
+The commands in this section require the [`scene`](/protocol/permissions) permission.
 
 A separate lifecycle for animating **existing** elements without touching undo history or collaboration until you commit. `begin-preview` snapshots each element's rest geometry and moves it onto the animation layer; `preview-transforms` bakes per-tick deltas from that rest pose into real local geometry silently (nothing syncs, enters undo, or echoes as a scene event — but hit-testing and selection follow); `end-preview` restores non-committed elements, optionally baking final deltas as one undo step and one sync.
 
@@ -191,6 +201,8 @@ See [`PreviewTransform`](/protocol/data-types#previewtransform).
 
 ## Scene: text editing
 
+The commands in this section require the [`scene`](/protocol/permissions) permission.
+
 ```ts
 "command:scene:cancel-text-edit";
 res: {
@@ -209,6 +221,8 @@ res: {
 `update-text-edit` replaces the text of the active text edit in place, keeping the editor open so the user can keep typing. `updated` is `false` when no text edit is in progress.
 
 ## Tools
+
+The commands in this section require the [`scene`](/protocol/permissions) permission.
 
 ```ts
 "command:tools:get-active"
@@ -242,6 +256,8 @@ See [`ToolId`](/protocol/data-types#toolstylestate), [`StyleableToolId`](/protoc
 
 ## Context menus
 
+The commands in this section require the [`dom`](/protocol/permissions) permission.
+
 ```ts
 "command:context-menu:add";
 req: ContextMenu;
@@ -269,6 +285,8 @@ type ContextMenu = {
 Subscribe to [`subscription:context-menu:clicked`](/protocol/subscriptions#input-events) to know when a menu item is chosen.
 
 ## DOM
+
+The commands in this section require the [`dom`](/protocol/permissions) permission.
 
 Drawdy exposes a handful of host-DOM primitives for buttons, floating panels, and window geometry.
 
@@ -316,6 +334,8 @@ res: { exited: boolean }
 
 ## Webviews
 
+The commands in this section require the [`dom`](/protocol/permissions) permission.
+
 A webview is an isolated HTML document Drawdy hosts for you. Two-way messaging goes through the [webview API](/protocol/webview-api).
 
 ```ts
@@ -341,7 +361,7 @@ res: { posted: boolean }
 
 ## Storage
 
-Two key/value stores scoped to your driver. `kv-storage` is plain; `secure-storage` is for secrets.
+Two key/value stores scoped to your driver. `kv-storage` is plain and requires the [`storage`](/protocol/permissions) permission; `secure-storage` is for secrets and requires the [`secure-storage`](/protocol/permissions) permission.
 
 ```ts
 "command:kv-storage:set"
@@ -369,12 +389,16 @@ res: { deleted: boolean }
 
 ## History
 
+The commands in this section require the [`scene`](/protocol/permissions) permission.
+
 ```ts
 "command:history:undo";
 "command:history:redo";
 ```
 
 ## Subscription management
+
+No permission is required for the commands in this section.
 
 ```ts
 "command:subscription:remove";

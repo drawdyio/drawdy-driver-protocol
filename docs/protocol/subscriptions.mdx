@@ -1,6 +1,6 @@
 ---
 title: "Subscriptions"
-description: "Scene, camera, DOM, webview, and input events, and the body each delivers."
+description: "Scene, camera, DOM, webview, and input events, the body each delivers, and the permission each needs."
 ---
 
 Subscriptions push events to your driver. They travel through the same envelope as commands — a subscription **is** a command whose response returns a `subscriptionId`:
@@ -37,7 +37,7 @@ type ProtocolSubscriptionEvent<T, BODY> = {
 
 Dispatch on `event.type`, read `event.body`, and unsubscribe with [`command:subscription:remove`](/protocol/commands#subscription-management).
 
-Each subscription topic below lists its request (the `subscription:*` `req`) and the `body` of the event it delivers.
+Each subscription topic below lists its request (the `subscription:*` `req`) and the `body` of the event it delivers. Subscribing is a command, so it is gated by the same [permissions](/protocol/permissions): each section names the permission its topics need, and subscribing without it fails with an `unauthorized` error.
 
 ## Typing a subscription
 
@@ -62,6 +62,8 @@ type PointerEvent = Extract<
 `PointerReq` carries `req` (here `{ elementIds? }`); `PointerEvent` carries `body`.
 
 ## Scene events
+
+The subscriptions in this section require the [`scene`](/protocol/permissions) permission.
 
 ```ts
 "subscription:scene:elements-added"
@@ -164,6 +166,8 @@ The `properties` you pass when subscribing to element events select which fields
 
 ## Camera events
 
+No permission is required for the subscriptions in this section.
+
 ```ts
 "subscription:camera:moved-rapid";
 body: {
@@ -183,6 +187,8 @@ body: {
 `moved-rapid` fires continuously during movement; `moved-debounced` fires once movement settles.
 
 ## DOM events
+
+The subscriptions in this section require the [`dom`](/protocol/permissions) permission.
 
 ```ts
 "subscription:dom:element-clicked";
@@ -254,6 +260,8 @@ body: {
 
 ## Webview events
 
+The subscriptions in this section require the [`dom`](/protocol/permissions) permission.
+
 ```ts
 "subscription:webview:message";
 req: {
@@ -266,6 +274,8 @@ body: {
 ```
 
 ## Input events
+
+The subscriptions in this section require the [`dom`](/protocol/permissions) permission.
 
 ```ts
 "subscription:context-menu:clicked";

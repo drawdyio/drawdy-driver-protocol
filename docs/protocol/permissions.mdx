@@ -1,0 +1,90 @@
+---
+title: "Permissions"
+description: "What each permission grants, how a driver declares them, and when Drawdy asks the user."
+---
+
+Every command and subscription topic maps to one permission, or to none. A driver declares the permissions it needs in its manifest, and Drawdy asks the user to grant each one the first time a command that needs it is issued. Nothing is asked at install or in `activate`.
+
+```ts
+type ProtocolPermission = "dom" | "scene" | "storage" | "secure-storage";
+```
+
+## Declaring permissions
+
+The manifest lists every permission the driver may ever need:
+
+```json
+{
+    "driverId": "drawdy.my-extension",
+    "driverName": "My Extension",
+    "driverVersion": "1.0.0",
+    "main": "main.js",
+    "permissions": ["scene", "storage"]
+}
+```
+
+A command whose permission is not declared fails immediately with an [`unauthorized`](/protocol/overview#errors) error. The user is never prompted for it. Declare only what the driver uses: the list is what a reviewer and a user judge the driver by.
+
+## What each permission grants
+
+| Permission | Grants | Covers |
+| --- | --- | --- |
+| `dom` | Drawdy's UI surface around the canvas. | Action buttons, floating elements, window size and fullscreen, webviews, context menus, and their events, including `subscription:keyboard:control-keys`. |
+| `scene` | The user's content and the tools that edit it. | Every `command:scene:*` command (elements, images, previews, text editing, screenshots, selection), every `command:tools:*` command, undo and redo, and every `subscription:scene:*` topic. |
+| `storage` | The driver's plain key/value store on this device. | `command:kv-storage:*`. |
+| `secure-storage` | The driver's encrypted store on the user's account. | `command:secure-storage:*`. |
+
+Reading and moving the camera, the camera-moved events, and `command:subscription:remove` need no permission and always run.
+
+Each section of [Commands](/protocol/commands) and [Subscriptions](/protocol/subscriptions) names the permission its entries need.
+
+## Lazy by design
+
+Drawdy does not ask for permissions up front. It checks them per command, at the moment the command arrives:
+
+1. **Look up the command's permission.** If it has none, the command runs.
+2. **Check the manifest.** If the permission is not declared, the command fails with `unauthorized`.
+3. **Check for an earlier decision.** If the user already granted or denied this permission to this driver on this device, that answer is reused silently.
+4. **Ask the user.** Otherwise a dialog explains what the driver wants in terms of that permission. The answer is remembered, and the command runs or fails accordingly.
+
+The first command that needs a permission is what triggers the dialog. A driver that declares `scene` but only ever reads the camera never prompts. A driver that draws on the canvas prompts when it first draws, which is usually in response to something the user just did, so the request makes sense in context.
+
+One prompt covers one permission for one driver. Once `scene` is granted, every `scene` command from that driver runs without asking again.
+
+## Where decisions live
+
+Decisions are stored per device, per driver, per permission, in the browser. They are not part of the user's account and do not sync between devices. A denial is remembered the same way a grant is, so a denied command keeps failing with `unauthorized` instead of prompting again.
+
+Removing a driver clears its decisions. Reinstalling it starts fresh and prompts again on first use.
+
+## Handling a denial
+
+A denied command resolves with `res.error.type === "unauthorized"`. Drawdy does nothing else, so the driver decides how to degrade:
+
+```ts
+const response = await issueCommand({
+    type: "command:scene:add-drawdy-elements",
+    driverId,
+    requestId: nextRequestId(),
+    req: { elements },
+});
+
+if (response.res.error?.type === "unauthorized") {
+    // hide the feature, show a hint, or carry on without it
+}
+```
+
+Because the answer is remembered, issue the gated command once and branch on the result. There is no need to check ahead of time, and no command to ask for a permission directly.
+
+## Looking up a permission in types
+
+`ProtocolPermissionMap` is the full assignment, keyed by command `type` and checked against `DriverCommand` at compile time, so it covers every command and subscription in this reference. Commands that need nothing map to `"none"`.
+
+```ts
+import type { ProtocolPermissionMap } from "@drawdy/driver-protocol";
+
+type AddElementsPermission =
+    ProtocolPermissionMap["command:scene:add-drawdy-elements"]; // "scene"
+type GetInfoPermission =
+    ProtocolPermissionMap["command:camera:get-info"]; // "none"
+```

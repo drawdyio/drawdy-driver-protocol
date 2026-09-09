@@ -56,7 +56,7 @@ type ProtocolCommandError =
     | ProtocolError<"unauthorized">; // permission was not granted (HTTP 401)
 ```
 
-Branch on `error.type` to react (e.g. degrade gracefully on `"unauthorized"`); read `error.message` for display and `error.body` for the specifics (`not-found` carries the missing id, for instance).
+Branch on `error.type` to react (e.g. degrade gracefully on `"unauthorized"`, which means the command's [permission](/protocol/permissions) was not granted); read `error.message` for display and `error.body` for the specifics (`not-found` carries the missing id, for instance).
 
 You never build the whole object with `res` yourself. You issue a **request** — the command minus `res` — and receive a **response** — the command minus `req`:
 
@@ -120,13 +120,15 @@ interface DriverManifest {
     driverVersion: string;
     description?: string;
     main: string;
+    permissions: ProtocolPermission[];
 }
 ```
 
-`main` is the entry bundle filename inside the `.drawdyx` zip.
+`main` is the entry bundle filename inside the `.drawdyx` zip. `permissions` lists every [permission](/protocol/permissions) the driver may need; commands that need an undeclared one fail with `unauthorized`.
 
 ## In this section
 
+- **[Permissions](/protocol/permissions)** — what each permission grants, how to declare them, and when the user is asked.
 - **[Commands](/protocol/commands)** — every command a driver can issue, with its request and response.
 - **[Subscriptions](/protocol/subscriptions)** — the events Drawdy pushes to `onEvent`.
 - **[Webview API](/protocol/webview-api)** — the `acquireDrawdyApi()` global inside a webview document.
