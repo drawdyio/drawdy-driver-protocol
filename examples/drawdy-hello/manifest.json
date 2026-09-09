@@ -2,7 +2,7 @@
     "driverId": "drawdy.hello",
     "driverName": "Drawdy Hello",
     "driverVersion": "0.1.0",
-    "description": "Says hello to the drawdy main loop.",
+    "description": "A minimal example extension. Whenever elements are added to the board, it flies the camera to them so you can see what just landed.",
     "main": "main.js",
     "permissions": ["dom", "scene", "storage", "secure-storage"]
 }

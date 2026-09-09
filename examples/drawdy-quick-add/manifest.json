@@ -2,7 +2,7 @@
     "driverId": "drawdy.quick-add",
     "driverName": "Quick Add",
     "driverVersion": "0.1.0",
-    "description": "Select a shape and click a side dot to add a connected shape.",
+    "description": "Build diagrams faster. Select a shape and click one of the dots on its sides to add a connected copy in that direction, already linked with an arrow.",
     "main": "main.js",
     "permissions": ["dom", "scene", "storage", "secure-storage"]
 }

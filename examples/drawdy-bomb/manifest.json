@@ -2,7 +2,7 @@
     "driverId": "drawdy.bomb",
     "driverName": "Bomb",
     "driverVersion": "0.1.0",
-    "description": "Drag the bomb over your elements and drop to blow them up.",
+    "description": "A playful demo extension. Drag the bomb from the toolbar over your elements and drop it to blow them off the board.",
     "main": "main.js",
     "permissions": ["dom", "scene", "storage", "secure-storage"]
 }

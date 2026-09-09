@@ -2,7 +2,7 @@
     "driverId": "drawdy.math-symbols",
     "driverName": "Math Symbols",
     "driverVersion": "0.1.0",
-    "description": "Drag Greek letters, operators, and math notation straight onto the canvas.",
+    "description": "A palette of Greek letters, operators, and math notation. Drag a symbol straight onto the canvas or insert it into the text you are editing.",
     "main": "main.js",
     "permissions": ["dom", "scene", "storage", "secure-storage"]
 }

@@ -2,7 +2,7 @@
     "driverId": "drawdy.presentation",
     "driverName": "Presentation",
     "driverVersion": "1",
-    "description": "Fully-fledged presentation extension",
+    "description": "Turn any board into a slideshow. Mark frames as slides, order them, and present fullscreen with keyboard navigation and smooth camera transitions.",
     "main": "main.js",
     "permissions": ["dom", "scene", "storage", "secure-storage"]
 }

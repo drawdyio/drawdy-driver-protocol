@@ -2,7 +2,7 @@
     "driverId": "drawdy.claude-canvas",
     "driverName": "Claude Canvas",
     "driverVersion": "1.0.1",
-    "description": "Chat with Claude about your board. Claude can read, see, and draw on the canvas.",
+    "description": "Chat with Claude about your board. Claude can read your elements, see the canvas, and draw directly on it to sketch, annotate, or answer questions.",
     "main": "main.js",
     "permissions": ["dom", "scene", "storage", "secure-storage"]
 }

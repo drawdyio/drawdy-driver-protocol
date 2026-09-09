@@ -2,7 +2,7 @@
     "driverId": "drawdy.physics-engine",
     "driverName": "Physics Engine",
     "driverVersion": "0.1.0",
-    "description": "Simulate selected elements as 2D rigid bodies: gravity, collisions, and impulse response.",
+    "description": "Simulate selected elements as 2D rigid bodies. Right-click a selection to drop it into a world with gravity, collisions, and impulse response, then commit the result to the board.",
     "main": "main.js",
     "permissions": ["dom", "scene", "storage", "secure-storage"]
 }
