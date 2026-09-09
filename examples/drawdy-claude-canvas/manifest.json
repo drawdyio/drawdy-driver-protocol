@@ -3,5 +3,6 @@
     "driverName": "Claude Canvas",
     "driverVersion": "1.0.1",
     "description": "Chat with Claude about your board. Claude can read, see, and draw on the canvas.",
-    "main": "main.js"
+    "main": "main.js",
+    "permissions": ["dom", "scene", "storage", "secure-storage"]
 }

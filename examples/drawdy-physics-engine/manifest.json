@@ -3,5 +3,6 @@
     "driverName": "Physics Engine",
     "driverVersion": "0.1.0",
     "description": "Simulate selected elements as 2D rigid bodies: gravity, collisions, and impulse response.",
-    "main": "main.js"
+    "main": "main.js",
+    "permissions": ["dom", "scene", "storage", "secure-storage"]
 }

@@ -3,5 +3,6 @@
     "driverName": "Bomb",
     "driverVersion": "0.1.0",
     "description": "Drag the bomb over your elements and drop to blow them up.",
-    "main": "main.js"
+    "main": "main.js",
+    "permissions": ["dom", "scene", "storage", "secure-storage"]
 }

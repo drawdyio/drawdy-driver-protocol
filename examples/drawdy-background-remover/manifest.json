@@ -3,5 +3,6 @@
     "driverName": "Background Remover",
     "driverVersion": "0.1.0",
     "description": "Right-click a selected image to remove its background, entirely on-device.",
-    "main": "main.js"
+    "main": "main.js",
+    "permissions": ["dom", "scene", "storage", "secure-storage"]
 }

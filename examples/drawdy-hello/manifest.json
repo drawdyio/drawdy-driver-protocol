@@ -3,5 +3,6 @@
     "driverName": "Drawdy Hello",
     "driverVersion": "0.1.0",
     "description": "Says hello to the drawdy main loop.",
-    "main": "main.js"
+    "main": "main.js",
+    "permissions": ["dom", "scene", "storage", "secure-storage"]
 }

@@ -3,5 +3,6 @@
     "driverName": "Math Symbols",
     "driverVersion": "0.1.0",
     "description": "Drag Greek letters, operators, and math notation straight onto the canvas.",
-    "main": "main.js"
+    "main": "main.js",
+    "permissions": ["dom", "scene", "storage", "secure-storage"]
 }

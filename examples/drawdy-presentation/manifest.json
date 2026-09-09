@@ -3,5 +3,6 @@
     "driverName": "Presentation",
     "driverVersion": "1",
     "description": "Fully-fledged presentation extension",
-    "main": "main.js"
+    "main": "main.js",
+    "permissions": ["dom", "scene", "storage", "secure-storage"]
 }
