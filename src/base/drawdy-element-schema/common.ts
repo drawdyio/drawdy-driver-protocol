@@ -11,6 +11,7 @@ export interface SubscribeableProperties extends ElementStyle {
     componentType: string;
     meta: Record<string, unknown>;
     locked: boolean;
+    groupId: string;
     x: number;
     y: number;
     width: number;
@@ -51,6 +52,7 @@ export type UpdateableProperties = ElementStyle &
     Partial<{
         meta: Record<string, unknown>;
         locked: boolean;
+        groupId: string | null;
         localAnimation: LocalAnimation | null;
     }>;
 
@@ -81,4 +83,5 @@ export type ElementStyle = {
 export interface DrawdyElementCommon extends ElementStyle {
     drawdyElementId: string;
     meta?: Record<string, any>;
+    groupId?: string;
 }

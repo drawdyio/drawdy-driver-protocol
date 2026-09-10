@@ -5,7 +5,7 @@ description: "DrawdyElementSchema, DomElementSchema, element properties, ModuleS
 
 ## DrawdyElementSchema
 
-The elements you add to the canvas with `scene:add-drawdy-elements` and preview commands. All variants share a common base, which carries the full set of visual style overrides:
+The elements you add to the canvas with `scene:add-drawdy-elements` and preview commands. All variants share a common base, which carries the full set of visual style overrides and an optional `groupId` — elements that share one select, move, resize and rotate together:
 
 ```ts
 type ElementStyle = {
@@ -26,6 +26,7 @@ type ElementStyle = {
 interface DrawdyElementCommon extends ElementStyle {
     drawdyElementId: string;
     meta?: Record<string, any>;
+    groupId?: string;
 }
 
 type StrokeDash = "solid" | "dashed" | "dotted";
@@ -233,6 +234,7 @@ interface SubscribeableProperties extends ElementStyle {
     componentType: string;
     meta: Record<string, unknown>;
     locked: boolean;
+    groupId: string;
     x: number;
     y: number;
     width: number;
@@ -250,7 +252,7 @@ type DrawdyElement = { id: string };
 type SubscribedDrawdyElement = DrawdyElement & Partial<SubscribeableProperties>;
 ```
 
-When you query or subscribe you pass a list of `SubscribeableKey`; each returned `SubscribedDrawdyElement` carries `id` plus exactly the properties you asked for. Style fields are only present when the element has them set. `startBinding`/`endBinding` are present only on lines and arrows whose end is bound to another element — request them to discover which elements a connector links. The package is type-only, so to request every style field build the key list yourself — a `Record<keyof ElementStyle, 0>` literal checked with `satisfies` gives you a compile-time-complete list to `Object.keys`.
+When you query or subscribe you pass a list of `SubscribeableKey`; each returned `SubscribedDrawdyElement` carries `id` plus exactly the properties you asked for. Style fields are only present when the element has them set, and `groupId` only when the element belongs to a group. `startBinding`/`endBinding` are present only on lines and arrows whose end is bound to another element — request them to discover which elements a connector links. The package is type-only, so to request every style field build the key list yourself — a `Record<keyof ElementStyle, 0>` literal checked with `satisfies` gives you a compile-time-complete list to `Object.keys`.
 
 Updates are a partial patch:
 
@@ -259,11 +261,12 @@ type UpdateableProperties = ElementStyle &
     Partial<{
         meta: Record<string, unknown>;
         locked: boolean;
+        groupId: string | null;
         localAnimation: LocalAnimation | null;
     }>;
 ```
 
-`meta` merges into existing meta. Style fields are set as given, so a driver can restyle existing elements (recolor, change stroke width, switch `fillStyle`) with `command:scene:update-drawdy-elements`. `localAnimation` attaches (or, when `null`, clears) a declarative animation on the element.
+`meta` merges into existing meta. Style fields are set as given, so a driver can restyle existing elements (recolor, change stroke width, switch `fillStyle`) with `command:scene:update-drawdy-elements`. `localAnimation` attaches (or, when `null`, clears) a declarative animation on the element. `groupId` joins the element to a group — any string unique within the board, or an existing group's id to join it — and `null` ungroups it.
 
 ## LocalAnimation
 
