@@ -32,7 +32,10 @@ export async function toggleSelectionTag(
             req: { properties: ["componentType", "locked", "meta"] },
         })
     );
-    const sel = drawdyElements.filter((el) => selected.has(el.id));
+    // The sandbox rect itself is never a body.
+    const sel = drawdyElements.filter(
+        (el) => selected.has(el.id) && physicsMode(el) !== "sandbox"
+    );
     if (sel.length === 0) return 0;
 
     const allTagged = sel.every((el) => physicsMode(el) === mode);

@@ -14,15 +14,25 @@ export type ModelId = (typeof MODELS)[number]["id"];
 
 export type Theme = "dark" | "light";
 
+export type Attachment = {
+    name: string;
+    mediaType: string;
+    size: number;
+    data: string;
+};
+
+export type AttachmentMeta = Pick<Attachment, "name" | "mediaType" | "size">;
+
 export type ChatEntry = {
     role: "user" | "assistant";
     text: string;
+    attachments?: AttachmentMeta[];
 };
 
 /** webview -> driver */
 export type WebviewToDriver =
     | { type: "ready" }
-    | { type: "chat"; text: string }
+    | { type: "chat"; text: string; attachments?: Attachment[] }
     | { type: "stop" }
     | { type: "clear-conversation" }
     | { type: "set-api-key"; apiKey: string }
@@ -34,7 +44,7 @@ export type DriverToWebview =
     | {
           type: "init";
           theme: Theme;
-          hasApiKey: boolean;
+          apiKey: string | null;
           model: ModelId;
           entries: ChatEntry[];
           running: boolean;

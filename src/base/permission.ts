@@ -89,6 +89,7 @@ export type ProtocolPermissionMap = ExactMatch<{
     "subscription:scene:elements-updated": "scene";
     "subscription:scene:activity": "scene";
     "subscription:scene:pointer": "scene";
+    "subscription:scene:pointer-position": "scene";
     "subscription:scene:click": "scene";
     "subscription:scene:text-edit": "scene";
     "subscription:scene:drawdy-element-selection": "scene";
