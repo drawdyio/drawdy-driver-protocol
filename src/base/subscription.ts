@@ -106,6 +106,7 @@ export type DriverSubscription =
           // subscribes to all if undefined
           { elementIds?: string[] }
       >
+    | ProtocolSubscription<"subscription:scene:pointer-position", undefined>
     | ProtocolSubscription<
           "subscription:scene:click",
           // subscribes to all if undefined
@@ -191,6 +192,15 @@ export type DriverSubscriptionEvent =
                 type: "cancel";
                 domElementId: string;
             }
+      >
+    | ProtocolSubscriptionEvent<
+          "subscription:scene:pointer-position",
+          {
+              position: {
+                  canvasSpace: { x: number; y: number };
+                  domSpace: { x: number; y: number };
+              };
+          }
       >
     | ProtocolSubscriptionEvent<
           "subscription:dom:theme-changed",
