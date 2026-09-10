@@ -9,6 +9,15 @@ import { Vec2 } from "../engine/vec2";
 import { buildDynamicBody, buildStaticBody } from "./colliders";
 import { Ctx, stamp, unwrap } from "./context";
 import { isDynamicEligible, physicsMode } from "./meta";
+import {
+    SandboxRect,
+    createSandbox,
+    defaultRectAround,
+    findSandbox,
+    isInside,
+    isPointInside,
+    sandboxRect,
+} from "./sandbox";
 
 const ELEMENT_PROPERTIES: SubscribeableKey[] = [
     "type",
@@ -37,12 +46,11 @@ const COMMIT_EPSILON_RAD = 0.001;
 const GEOM_EPSILON = 0.01;
 const AUTO_START_DEBOUNCE_MS = 400;
 
-const WALL_ID_PREFIX = "__viewport-wall:";
+const WALL_ID_PREFIX = "__sandbox-wall:";
 /** Thin walls let fast bodies tunnel. */
 const WALL_THICKNESS = 500;
-/** A dragged body stays pinned until its events stop for this long. */
+
 const DRAG_HOLD_MS = 500;
-const WALL_REFRESH_MS = 80;
 
 /** Wall milliseconds each physics substep represents. */
 const SUBSTEP_WALL_MS = 1000 / (TICK * SIM_MULTIPLIER);
@@ -136,11 +144,17 @@ export class PhysicsSession {
     private _idleGeom = new Map<string, SourceGeom>();
     /** Elements being dragged when a restart fires — re-held on start. */
     private _pendingHeldIds = new Set<string>();
+    /** Ids in the host's current drag gesture (dragStart → dragEnd). */
+    private _draggedIds = new Set<string>();
     /** Gates the load-time auto-start retries. */
     public hasEverRun = false;
-    /** Notified when tags flip (menu ✓ refresh). */
-    public onTagsChanged: (() => void) | null = null;
-    private _wallRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    private _sandboxId: string | null = null;
+    private _sandboxRect: SandboxRect | null = null;
+    /** Pose deltas of bodies that escaped mid-run, kept for the commit. */
+    private _escaped = new Map<
+        string,
+        { dx: number; dy: number; dRotation: number }
+    >();
 
     constructor(private _ctx: Ctx) {}
 
@@ -158,7 +172,10 @@ export class PhysicsSession {
         }
         let trigger = false;
         for (const el of els) {
-            if (physicsMode(el) === "none") continue;
+            const mode = physicsMode(el);
+            // A sandbox appearing (our own creation echo, or a peer's) has
+            // no bodies to drop; the next run adopts it.
+            if (mode === "none" || mode === "sandbox") continue;
             const now = sourceGeomOf(el);
             if (now) {
                 const rest = this._lastRunRest.get(el.id);
@@ -257,30 +274,37 @@ export class PhysicsSession {
         }
     }
 
-    /** The walls track the screen edges: rebuild them on camera moves. */
-    onCameraMoved(): void {
-        if (!this.running) {
-            if (!this.hasEverRun || this._busy) return;
-            if (this._autoStartTimer) clearTimeout(this._autoStartTimer);
-            this._autoStartTimer = setTimeout(() => {
-                this._autoStartTimer = null;
-                if (!this.running) void this.restart();
-            }, AUTO_START_DEBOUNCE_MS);
-            return;
+    /** Ids joined the host's drag gesture: keep them pinned until dragEnd. */
+    onDragActive(ids: string[]): void {
+        for (const id of ids) {
+            this._draggedIds.add(id);
+            const hold = this._held.get(id);
+            if (hold) hold.until = Infinity;
         }
-        if (this._wallRefreshTimer) return;
-        this._wallRefreshTimer = setTimeout(() => {
-            this._wallRefreshTimer = null;
-            const world = this._world;
-            if (!world) return;
-            void this._addViewportWalls(world).then(() => {
-                this._settleMs = 0; // walls may have moved from under bodies
-            });
-        }, WALL_REFRESH_MS);
+    }
+
+    /** The drag gesture ended — release every drag-held body next frame. */
+    onDragEnd(): void {
+        const now = Date.now();
+        for (const hold of this._held.values()) {
+            if (!Number.isFinite(hold.until)) hold.until = now;
+        }
+        this._draggedIds.clear();
     }
 
     /** An element was deleted on the board — drop its body mid-run. */
     onElementsRemoved(ids: string[]): void {
+        if (this._sandboxId && ids.includes(this._sandboxId)) {
+            // Sandbox gone: bank the poses and go idle. The next run start
+            // creates a fresh sandbox, so nothing simulates unbounded.
+            this._idleGeom.delete(this._sandboxId);
+            this._sandboxId = null;
+            this._sandboxRect = null;
+            if (this._world) {
+                void this._commitAndStop();
+                return;
+            }
+        }
         if (!this._world) {
             // Idle: deleting a tagged element re-simulates the rest.
             let tagged = false;
@@ -318,8 +342,24 @@ export class PhysicsSession {
                 const before = this._idleGeom.get(el.id);
                 this._idleGeom.set(el.id, now);
                 if (!before || !geomChanged(before, now)) continue;
+                if (mode === "sandbox") {
+                    if (el.id === this._sandboxId) {
+                        this._sandboxRect = {
+                            x: now.x,
+                            y: now.y,
+                            w: now.w,
+                            h: now.h,
+                        };
+                        trigger = true;
+                    }
+                    continue;
+                }
                 const rest = this._lastRunRest.get(el.id);
                 if (rest && !geomChanged(rest, now)) continue; // undo
+                if (this._sandboxRect && !isInside(this._sandboxRect, now)) {
+                    void this._untag([el.id]);
+                    continue;
+                }
                 // A moving dynamic element is mid-drag: the new run must
                 // grip it from its first frame, or it falls out of the hand.
                 if (mode === "dynamic" && isDynamicEligible(el)) {
@@ -331,6 +371,15 @@ export class PhysicsSession {
             return;
         }
         for (const el of els) {
+            if (el.id === this._sandboxId) {
+                const rect = sandboxRect(el);
+                if (rect) {
+                    this._sandboxRect = rect;
+                    this._buildWalls(this._world);
+                    this._settleMs = 0;
+                }
+                continue;
+            }
             const before = this._sourceGeom.get(el.id);
             if (!before) continue;
             const now = sourceGeomOf(el);
@@ -353,7 +402,9 @@ export class PhysicsSession {
                     body.isStatic = true;
                     this._world.add(body);
                     this._held.set(el.id, {
-                        until: Date.now() + DRAG_HOLD_MS,
+                        until: this._draggedIds.has(el.id)
+                            ? Infinity
+                            : Date.now() + DRAG_HOLD_MS,
                         el,
                     });
                 }
@@ -382,15 +433,59 @@ export class PhysicsSession {
             })
         );
 
-        const dynamicEls = drawdyElements.filter(
+        const allDynamic = drawdyElements.filter(
             (el) => physicsMode(el) === "dynamic" && isDynamicEligible(el)
         );
-        const staticEls = drawdyElements.filter(
+        const allStatic = drawdyElements.filter(
             (el) => physicsMode(el) === "static"
         );
-        if (dynamicEls.length === 0) {
+        if (allDynamic.length === 0) {
             console.info(
                 `[drawdy-physics] no dynamic bodies among ${drawdyElements.length} elements; staying idle`
+            );
+            return;
+        }
+
+        // Adopt the board's sandbox, or create one around the tagged content.
+        const sandboxEl = findSandbox(drawdyElements);
+        if (sandboxEl) {
+            this._sandboxId = sandboxEl.id;
+            this._sandboxRect = sandboxRect(sandboxEl);
+        } else {
+            const { rect } = unwrap(
+                await ctx.issueCommand({
+                    type: "command:scene:query-combined-rect",
+                    ...stamp(ctx),
+                    req: {
+                        drawdyElementIds: [...allDynamic, ...allStatic].map(
+                            (el) => el.id
+                        ),
+                    },
+                })
+            );
+            const box = defaultRectAround(rect);
+            this._sandboxId = await createSandbox(ctx, box);
+            this._sandboxRect = box;
+            console.info(
+                `[drawdy-physics] sandbox created ${Math.round(box.w)}x${Math.round(box.h)}`
+            );
+        }
+
+        // Elements outside the sandbox lose their tag and stay out of the world.
+        const box = this._sandboxRect;
+        const inBox = (el: SubscribedDrawdyElement): boolean => {
+            const g = sourceGeomOf(el);
+            return !box || !g || isInside(box, g);
+        };
+        const escapedIds = [...allDynamic, ...allStatic]
+            .filter((el) => !inBox(el))
+            .map((el) => el.id);
+        if (escapedIds.length > 0) await this._untag(escapedIds);
+        const dynamicEls = allDynamic.filter(inBox);
+        const staticEls = allStatic.filter(inBox);
+        if (dynamicEls.length === 0) {
+            console.info(
+                `[drawdy-physics] every dynamic body was outside the sandbox; staying idle`
             );
             return;
         }
@@ -406,6 +501,7 @@ export class PhysicsSession {
 
         const world = new World();
         this._sourceGeom = new Map();
+        this._escaped.clear();
         for (const el of dynamicEls) {
             if (!beganSet.has(el.id)) continue; // grouped: rejected by host
             const body = buildDynamicBody(el);
@@ -426,7 +522,7 @@ export class PhysicsSession {
             const src = sourceGeomOf(el);
             if (src) this._sourceGeom.set(el.id, src);
         }
-        await this._addViewportWalls(world);
+        this._buildWalls(world);
         if (world.bodies.every((b) => b.isStatic)) {
             this._world = world;
             await this._commitAndStop();
@@ -450,7 +546,9 @@ export class PhysicsSession {
             body.invInertia = 0;
             body.isStatic = true;
             this._held.set(id, {
-                until: Date.now() + DRAG_HOLD_MS,
+                until: this._draggedIds.has(id)
+                    ? Infinity
+                    : Date.now() + DRAG_HOLD_MS,
                 el,
             });
             console.info(`[drawdy-physics] grab ${id} (restart seed)`);
@@ -543,6 +641,22 @@ export class PhysicsSession {
                 perf.substeps += executed;
                 const steppedMs = executed * SUBSTEP_WALL_MS;
 
+                // A body whose center escaped the sandbox (tunneling) loses
+                // its tag; its pose is banked for the final commit.
+                if (this._sandboxRect) {
+                    for (const b of [...this._world.bodies]) {
+                        if (b.isStatic || this._releasing.has(b.id)) continue;
+                        if (isPointInside(this._sandboxRect, b.pos)) continue;
+                        this._escaped.set(b.id, {
+                            dx: b.pos.x - b.restPos.x,
+                            dy: b.pos.y - b.restPos.y,
+                            dRotation: b.angle,
+                        });
+                        this._world.remove(b.id);
+                        void this._untag([b.id]);
+                    }
+                }
+
                 const dynamics = this._world.bodies.filter(
                     (b) => !b.isStatic
                 );
@@ -627,11 +741,22 @@ export class PhysicsSession {
                         response.res.error === undefined
                             ? response.res.value.began
                             : [];
-                    if (this._world && began.includes(id)) {
-                        this._world.remove(id);
-                        const body = buildDynamicBody(hold.el);
-                        if (body) this._world.add(body);
+                    if (!this._world || !began.includes(id)) return;
+                    this._world.remove(id);
+                    // Dropped outside the sandbox: untag instead of going
+                    // live. The re-begun rest pose IS the dragged pose, so
+                    // end-preview leaves the element where the user put it.
+                    const g = sourceGeomOf(hold.el);
+                    if (
+                        this._sandboxRect &&
+                        g &&
+                        !isInside(this._sandboxRect, g)
+                    ) {
+                        void this._untag([id]);
+                        return;
                     }
+                    const body = buildDynamicBody(hold.el);
+                    if (body) this._world.add(body);
                 })
                 .finally(() => {
                     this._held.delete(id);
@@ -642,23 +767,44 @@ export class PhysicsSession {
         }
     }
 
-    /**
-     * Static walls along the viewport's bottom/left/right edges; the top
-     * stays open so things can drop in.
-     */
-    private async _addViewportWalls(world: World): Promise<void> {
-        const { rect } = unwrap(
-            await this._ctx.issueCommand({
-                type: "command:camera:get-viewport-rect",
-                ...stamp(this._ctx),
-            })
+    /** Untag elements that left the sandbox (meta write — undoable, synced). */
+    private async _untag(ids: string[]): Promise<void> {
+        if (ids.length === 0) return;
+        for (const id of ids) {
+            this._idleGeom.delete(id);
+            this._lastRunRest.delete(id);
+        }
+        console.info(
+            `[drawdy-physics] out of sandbox — untagged ${ids.join(", ")}`
         );
-        const { x, y, width, height } = rect;
-        for (const side of ["bottom", "left", "right"]) {
+        try {
+            unwrap(
+                await this._ctx.issueCommand({
+                    type: "command:scene:update-drawdy-elements",
+                    ...stamp(this._ctx),
+                    req: {
+                        updates: ids.map((id) => ({
+                            drawdyElementId: id,
+                            properties: {
+                                meta: { physics: { mode: "none" } },
+                            },
+                        })),
+                    },
+                })
+            );
+        } catch {
+            // board mid-teardown; the stale tag resurfaces on the next run
+        }
+    }
+
+    /** Four thick static walls hugging the sandbox rect's outside. */
+    private _buildWalls(world: World | null): void {
+        if (!world || !this._sandboxRect) return;
+        const { x, y, w, h } = this._sandboxRect;
+        for (const side of ["top", "bottom", "left", "right"]) {
             world.remove(`${WALL_ID_PREFIX}${side}`);
         }
         const T = WALL_THICKNESS;
-        // Side walls extend a screen upward so drop-ins can't slip out.
         const walls: {
             id: string;
             minX: number;
@@ -667,25 +813,32 @@ export class PhysicsSession {
             maxY: number;
         }[] = [
             {
+                id: `${WALL_ID_PREFIX}top`,
+                minX: x - T,
+                minY: y - T,
+                maxX: x + w + T,
+                maxY: y,
+            },
+            {
                 id: `${WALL_ID_PREFIX}bottom`,
                 minX: x - T,
-                minY: y + height,
-                maxX: x + width + T,
-                maxY: y + height + T,
+                minY: y + h,
+                maxX: x + w + T,
+                maxY: y + h + T,
             },
             {
                 id: `${WALL_ID_PREFIX}left`,
                 minX: x - T,
-                minY: y - height,
+                minY: y,
                 maxX: x,
-                maxY: y + height,
+                maxY: y + h,
             },
             {
                 id: `${WALL_ID_PREFIX}right`,
-                minX: x + width,
-                minY: y - height,
-                maxX: x + width + T,
-                maxY: y + height,
+                minX: x + w,
+                minY: y,
+                maxX: x + w + T,
+                maxY: y + h,
             },
         ];
         for (const wall of walls) {
@@ -714,21 +867,24 @@ export class PhysicsSession {
     /** Bake current poses into the document as one undo step, then go idle. */
     private async _commitAndStop(): Promise<void> {
         this._running = false;
-        if (this._wallRefreshTimer) {
-            clearTimeout(this._wallRefreshTimer);
-            this._wallRefreshTimer = null;
-        }
         const world = this._world;
         this._world = null;
         this._held.clear();
         this._releasing.clear();
         if (!world) {
             this._sourceGeom = new Map();
+            this._escaped.clear();
             return;
         }
 
-        const commits = world
-            .poseDeltas()
+        // Escaped bodies were dropped from the world mid-run; their banked
+        // poses still commit so the elements stay where they landed.
+        const escaped = [...this._escaped].map(([id, d]) => ({
+            id,
+            ...d,
+        }));
+        this._escaped.clear();
+        const commits = [...world.poseDeltas(), ...escaped]
             .filter(
                 (d) =>
                     Math.abs(d.dx) > COMMIT_EPSILON_PX ||

@@ -1,4 +1,8 @@
-import { DriverModule, SubscribeableKey } from "@drawdy/driver-protocol";
+import {
+    DriverModule,
+    ModuleStyling,
+    SubscribeableKey,
+} from "@drawdy/driver-protocol";
 import { Ctx, stamp, unwrap } from "./driver/context";
 import {
     dynamicMenuId,
@@ -8,6 +12,17 @@ import {
     toggleSelectionTag,
 } from "./driver/menu";
 import { physicsMode } from "./driver/meta";
+import {
+    ACTION_BUTTON_SVG,
+    WebviewToDriver,
+    actionButtonId,
+    handlePanelMessage,
+    openPanel,
+    panelWebviewId,
+    postPanelState,
+    postToPanel,
+    stylingCssVars,
+} from "./driver/panel";
 import { PhysicsSession } from "./driver/session";
 
 /** Properties the session needs to rebuild bodies. */
@@ -28,18 +43,35 @@ const UPDATE_PROPERTIES: SubscribeableKey[] = [
 // (reload vs. in-app navigation), so auto-start retries several moments.
 const AUTO_START_RETRIES_MS = [800, 2000, 4000, 8000, 15000];
 
-/** Poll rate for the submenu's ✓ state. */
-const MENU_POLL_MS = 500;
+/** Scene-event bursts (drags, commits) collapse into one panel refresh. */
+const PANEL_STATE_DEBOUNCE_MS = 300;
 
 let driver: {
     ctx: Ctx;
     session: PhysicsSession;
+    styling: ModuleStyling;
+    panelOpened: boolean;
+    panelStateTimer: ReturnType<typeof setTimeout> | null;
+    refreshChecks: () => Promise<void>;
+    setSelection: (ids: string[]) => void;
 } | null = null;
+
+/** Refresh the panel's lists, debounced; a no-op until it was first opened. */
+function schedulePanelState(): void {
+    const d = driver;
+    if (!d || !d.panelOpened) return;
+    if (d.panelStateTimer) clearTimeout(d.panelStateTimer);
+    d.panelStateTimer = setTimeout(() => {
+        d.panelStateTimer = null;
+        void postPanelState(d.ctx).catch(() => {});
+    }, PANEL_STATE_DEBOUNCE_MS);
+}
 
 export const activate: DriverModule["activate"] = async ({
     manifest,
     issueCommand,
     generateId,
+    styling,
 }) => {
     let requestId = 0;
     const ctx: Ctx = {
@@ -49,8 +81,80 @@ export const activate: DriverModule["activate"] = async ({
         nextRequestId: () => String(requestId++),
     };
     const session = new PhysicsSession(ctx);
-    driver = { ctx, session };
+
+    let selectedIds: string[] = [];
+    const refreshChecks = async (): Promise<void> => {
+        try {
+            if (selectedIds.length === 0) {
+                await refreshMenuChecks(ctx, { static: false, dynamic: false });
+                return;
+            }
+            const selected = new Set(selectedIds);
+            const { drawdyElements } = unwrap(
+                await issueCommand({
+                    type: "command:scene:get-drawdy-elements",
+                    ...stamp(ctx),
+                    req: { properties: ["meta"] },
+                })
+            );
+            const sel = drawdyElements.filter((el) => selected.has(el.id));
+            await refreshMenuChecks(ctx, {
+                static:
+                    sel.length > 0 &&
+                    sel.every((el) => physicsMode(el) === "static"),
+                dynamic:
+                    sel.length > 0 &&
+                    sel.every((el) => physicsMode(el) === "dynamic"),
+            });
+        } catch {
+            // board may be mid-teardown; the next selection change retries
+        }
+    };
+
+    driver = {
+        ctx,
+        session,
+        styling,
+        panelOpened: false,
+        panelStateTimer: null,
+        refreshChecks,
+        setSelection: (ids) => {
+            selectedIds = ids;
+        },
+    };
     console.info(`[drawdy-physics] activated (${manifest.driverVersion})`);
+
+    // Extension-rail panel: sandbox size + tagged-element lists.
+    unwrap(
+        await issueCommand({
+            type: "command:dom:create-action-button",
+            ...stamp(ctx),
+            req: {
+                domElementId: actionButtonId(ctx.driverId),
+                svg: ACTION_BUTTON_SVG,
+            },
+        })
+    );
+    unwrap(
+        await issueCommand({
+            type: "subscription:dom:element-clicked",
+            ...stamp(ctx),
+            req: { domElementId: actionButtonId(ctx.driverId) },
+        })
+    );
+    unwrap(
+        await issueCommand({
+            type: "subscription:webview:message",
+            ...stamp(ctx),
+            req: { webviewDomId: panelWebviewId(ctx.driverId) },
+        })
+    );
+    unwrap(
+        await issueCommand({
+            type: "subscription:dom:theme-changed",
+            ...stamp(ctx),
+        })
+    );
 
     // Extension → Physics → Static / Dynamic.
     // Tagging (re)starts the simulation — there is no run button.
@@ -85,13 +189,12 @@ export const activate: DriverModule["activate"] = async ({
         })
     );
 
-    // The viewport walls track the camera.
-    unwrap(
-        await issueCommand({
-            type: "subscription:camera:moved-rapid",
-            ...stamp(ctx),
-        })
-    );
+    for (const type of [
+        "subscription:scene:drawdy-element-selection",
+        "subscription:scene:drawdy-elements-dragged",
+    ] as const) {
+        unwrap(await issueCommand({ type, ...stamp(ctx) }));
+    }
 
     // Auto-start when tagged content appears (paste, board load, peers).
     for (const type of [
@@ -114,58 +217,11 @@ export const activate: DriverModule["activate"] = async ({
             void d.session.restart();
         }, delay);
     }
-
-    // Submenu ✓ tracking; metas re-fetched only when the selection changed
-    // or a tag flipped.
-    let lastSelectionKey: string | null = null;
-    let tagsDirty = false;
-    session.onTagsChanged = () => {
-        tagsDirty = true;
-    };
-    setInterval(async () => {
-        const d = driver;
-        if (!d) return;
-        try {
-            const { drawdyElementIds } = unwrap(
-                await issueCommand({
-                    type: "command:scene:get-current-selected-drawdy-elements",
-                    ...stamp(ctx),
-                })
-            );
-            const key = [...drawdyElementIds].sort().join(",");
-            if (key === lastSelectionKey && !tagsDirty) return;
-            lastSelectionKey = key;
-            tagsDirty = false;
-            if (drawdyElementIds.length === 0) {
-                await refreshMenuChecks(ctx, { static: false, dynamic: false });
-                return;
-            }
-            const selected = new Set(drawdyElementIds);
-            const { drawdyElements } = unwrap(
-                await issueCommand({
-                    type: "command:scene:get-drawdy-elements",
-                    ...stamp(ctx),
-                    req: { properties: ["meta"] },
-                })
-            );
-            const sel = drawdyElements.filter((el) => selected.has(el.id));
-            await refreshMenuChecks(ctx, {
-                static:
-                    sel.length > 0 &&
-                    sel.every((el) => physicsMode(el) === "static"),
-                dynamic:
-                    sel.length > 0 &&
-                    sel.every((el) => physicsMode(el) === "dynamic"),
-            });
-        } catch {
-            // board may be mid-teardown; retry next poll
-        }
-    }, MENU_POLL_MS);
 };
 
 export const onEvent: DriverModule["onEvent"] = async (e) => {
     if (!driver) return;
-    const { ctx, session } = driver;
+    const { ctx, session, refreshChecks, setSelection } = driver;
     switch (e.type) {
         case "subscription:context-menu:clicked": {
             const mode =
@@ -176,28 +232,65 @@ export const onEvent: DriverModule["onEvent"] = async (e) => {
                       : null;
             if (!mode) return;
             const changed = await toggleSelectionTag(ctx, mode);
-            session.onTagsChanged?.();
+            void refreshChecks();
+            schedulePanelState();
             if (changed > 0) await session.restart();
+            return;
+        }
+        case "subscription:scene:drawdy-element-selection": {
+            setSelection(e.body.drawdyElementIds);
+            void refreshChecks();
+            return;
+        }
+        case "subscription:scene:drawdy-elements-dragged": {
+            if (e.body.type === "dragEnd") session.onDragEnd();
+            else session.onDragActive(e.body.drawdyElementIds);
             return;
         }
         case "subscription:scene:elements-removed": {
             session.onElementsRemoved(e.body.drawdyElements.map((x) => x.id));
+            schedulePanelState();
             return;
         }
         case "subscription:scene:elements-updated": {
             session.onElementsUpdated(e.body.drawdyElements);
-            return;
-        }
-        case "subscription:camera:moved-rapid": {
-            session.onCameraMoved();
+            schedulePanelState();
             return;
         }
         case "subscription:scene:elements-added": {
             session.onElementsAppeared(e.body.drawdyElements);
+            schedulePanelState();
             return;
         }
         case "subscription:scene:elements-replaced": {
             session.onElementsAppeared(e.body.drawdyElements);
+            schedulePanelState();
+            return;
+        }
+        case "subscription:dom:element-clicked": {
+            if (e.body.domElementId !== actionButtonId(ctx.driverId)) return;
+            driver.panelOpened = true;
+            await openPanel(ctx, driver.styling);
+            // A kept-alive panel's baked-in vars may predate a theme flip.
+            postToPanel(ctx, {
+                type: "theme",
+                css: stylingCssVars(driver.styling),
+            });
+            schedulePanelState();
+            return;
+        }
+        case "subscription:webview:message": {
+            if (e.body.webviewDomId !== panelWebviewId(ctx.driverId)) return;
+            const message = e.body.message;
+            if (typeof message !== "object" || message === null) return;
+            await handlePanelMessage(ctx, session, message as WebviewToDriver);
+            return;
+        }
+        case "subscription:dom:theme-changed": {
+            const d = driver;
+            if (!d) return;
+            d.styling = e.body.styling;
+            postToPanel(ctx, { type: "theme", css: stylingCssVars(d.styling) });
             return;
         }
         default:
