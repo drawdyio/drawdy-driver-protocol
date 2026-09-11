@@ -2,8 +2,13 @@ import { SubscribedDrawdyElement } from "@drawdy/driver-protocol";
 import { Ctx, stamp, unwrap } from "./context";
 import { physicsMode } from "./meta";
 
-/** World-space sandbox interior; walls hug its outside. */
-export type SandboxRect = { x: number; y: number; w: number; h: number };
+export type SandboxRect = {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    rotation: number;
+};
 
 export const MIN_SANDBOX_W = 1600;
 export const MIN_SANDBOX_H = 1200;
@@ -16,7 +21,13 @@ export function sandboxRect(el: SubscribedDrawdyElement): SandboxRect | null {
     if (el.x == null || el.y == null || el.width == null || el.height == null) {
         return null;
     }
-    return { x: el.x, y: el.y, w: el.width, h: el.height };
+    return {
+        x: el.x,
+        y: el.y,
+        w: el.width,
+        h: el.height,
+        rotation: el.rotation ?? 0,
+    };
 }
 
 /** Every sandbox on the board, id-sorted so all clients list them alike. */
@@ -42,25 +53,30 @@ export function isInside(
     rect: SandboxRect,
     geom: { x: number; y: number; w: number; h: number }
 ): boolean {
-    const cx = geom.x + geom.w / 2;
-    const cy = geom.y + geom.h / 2;
-    return (
-        cx >= rect.x &&
-        cx <= rect.x + rect.w &&
-        cy >= rect.y &&
-        cy <= rect.y + rect.h
-    );
+    return isPointInside(rect, {
+        x: geom.x + geom.w / 2,
+        y: geom.y + geom.h / 2,
+    });
 }
 
+/** Bounds test in the rect's local frame, so rotated boxes contain correctly. */
 export function isPointInside(
     rect: SandboxRect,
     p: { x: number; y: number }
 ): boolean {
+    const rcx = rect.x + rect.w / 2;
+    const rcy = rect.y + rect.h / 2;
+    const cos = Math.cos(-rect.rotation);
+    const sin = Math.sin(-rect.rotation);
+    const dx = p.x - rcx;
+    const dy = p.y - rcy;
+    const lx = rcx + dx * cos - dy * sin;
+    const ly = rcy + dx * sin + dy * cos;
     return (
-        p.x >= rect.x &&
-        p.x <= rect.x + rect.w &&
-        p.y >= rect.y &&
-        p.y <= rect.y + rect.h
+        lx >= rect.x &&
+        lx <= rect.x + rect.w &&
+        ly >= rect.y &&
+        ly <= rect.y + rect.h
     );
 }
 
@@ -76,7 +92,7 @@ export function defaultRectAround(
     const h = Math.max(c.height * (1 + 2 * SANDBOX_INFLATE), MIN_SANDBOX_H);
     const cx = c.x + c.width / 2;
     const cy = c.y + c.height / 2;
-    return { x: cx - w / 2, y: cy - h / 2, w, h };
+    return { x: cx - w / 2, y: cy - h / 2, w, h, rotation: 0 };
 }
 
 /** World-space size of the name label at the rect's top-left. */
@@ -189,11 +205,13 @@ export async function resizeSandbox(
 ): Promise<SandboxRect | null> {
     const old = sandboxRect(el);
     if (!old) return null;
+    // The add schema carries no rotation, so a re-added box is upright.
     const rect: SandboxRect = {
         x: old.x + old.w / 2 - w / 2,
         y: old.y + old.h / 2 - h / 2,
         w,
         h,
+        rotation: 0,
     };
     await removeElement(ctx, el.id);
     await addSandboxElement(ctx, el.id, rect, physicsMetaOf(el), el);

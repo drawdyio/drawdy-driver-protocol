@@ -349,6 +349,7 @@ export class PhysicsSession {
                         y: now.y,
                         w: now.w,
                         h: now.h,
+                        rotation: now.rotation,
                     });
                     trigger = true;
                     continue;
@@ -379,7 +380,8 @@ export class PhysicsSession {
                     (rect.x !== prev.x ||
                         rect.y !== prev.y ||
                         rect.w !== prev.w ||
-                        rect.h !== prev.h)
+                        rect.h !== prev.h ||
+                        rect.rotation !== prev.rotation)
                 ) {
                     this._sandboxes.set(el.id, rect);
                     this._buildWallsFor(this._world, el.id, rect);
@@ -876,22 +878,37 @@ export class PhysicsSession {
                 maxY: y + h,
             },
         ];
+        
+        const rcx = x + w / 2;
+        const rcy = y + h / 2;
+        const cos = Math.cos(rect.rotation);
+        const sin = Math.sin(rect.rotation);
+        const rot = (px: number, py: number): Vec2 => ({
+            x: rcx + (px - rcx) * cos - (py - rcy) * sin,
+            y: rcy + (px - rcx) * sin + (py - rcy) * cos,
+        });
         for (const wall of walls) {
-            const cx = (wall.minX + wall.maxX) / 2;
-            const cy = (wall.minY + wall.maxY) / 2;
+            const center = rot(
+                (wall.minX + wall.maxX) / 2,
+                (wall.minY + wall.maxY) / 2
+            );
+            const corners = [
+                rot(wall.minX, wall.minY),
+                rot(wall.maxX, wall.minY),
+                rot(wall.maxX, wall.maxY),
+                rot(wall.minX, wall.maxY),
+            ];
             world.add(
                 Body.staticFrom(
                     wall.id,
                     {
                         kind: "polygon",
-                        vertices: [
-                            { x: wall.minX - cx, y: wall.minY - cy },
-                            { x: wall.maxX - cx, y: wall.minY - cy },
-                            { x: wall.maxX - cx, y: wall.maxY - cy },
-                            { x: wall.minX - cx, y: wall.maxY - cy },
-                        ],
+                        vertices: corners.map((c) => ({
+                            x: c.x - center.x,
+                            y: c.y - center.y,
+                        })),
                     },
-                    { x: cx, y: cy },
+                    center,
                     0.4,
                     0.6
                 )

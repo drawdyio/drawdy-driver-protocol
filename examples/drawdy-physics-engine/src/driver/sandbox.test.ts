@@ -9,7 +9,7 @@ import {
     singleLineName,
 } from "./sandbox";
 
-const rect = { x: 0, y: 0, w: 1000, h: 800 };
+const rect = { x: 0, y: 0, w: 1000, h: 800, rotation: 0 };
 
 describe("isInside", () => {
     it("keeps an element whose bbox center is inside, even when it overhangs", () => {
@@ -28,6 +28,14 @@ describe("isPointInside", () => {
         expect(isPointInside(rect, { x: 1000, y: 800 })).toBe(true);
         expect(isPointInside(rect, { x: 1000.1, y: 400 })).toBe(false);
         expect(isPointInside(rect, { x: 500, y: -0.1 })).toBe(false);
+    });
+
+    it("tests in the rect's local frame when it is rotated", () => {
+        // 1000x200 rect centered at (500,100), rotated 90°: now tall.
+        const tilted = { x: 0, y: 0, w: 1000, h: 200, rotation: Math.PI / 2 };
+        expect(isPointInside(tilted, { x: 500, y: 550 })).toBe(true);
+        expect(isPointInside(tilted, { x: 500, y: 650 })).toBe(false);
+        expect(isPointInside(tilted, { x: 800, y: 100 })).toBe(false);
     });
 });
 

@@ -165,6 +165,7 @@ export async function handlePanelMessage(
                     y: rect.y + rect.height / 2 - MIN_SANDBOX_H / 2,
                     w: MIN_SANDBOX_W,
                     h: MIN_SANDBOX_H,
+                    rotation: 0,
                 },
                 `Sandbox ${count + 1}`
             );
