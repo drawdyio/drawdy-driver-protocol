@@ -23,6 +23,7 @@ import {
     postToPanel,
     stylingCssVars,
 } from "./driver/panel";
+import { syncSandboxLabels } from "./driver/sandbox";
 import { PhysicsSession } from "./driver/session";
 
 /** Properties the session needs to rebuild bodies. */
@@ -37,6 +38,7 @@ const UPDATE_PROPERTIES: SubscribeableKey[] = [
     "y",
     "width",
     "height",
+    "text",
 ];
 
 // Board content and driver activation race differently per entry route
@@ -254,6 +256,9 @@ export const onEvent: DriverModule["onEvent"] = async (e) => {
         }
         case "subscription:scene:elements-updated": {
             session.onElementsUpdated(e.body.drawdyElements);
+            void syncSandboxLabels(ctx, e.body.drawdyElements)
+                .then((recreated) => (recreated ? session.restart() : null))
+                .catch(() => {});
             schedulePanelState();
             return;
         }

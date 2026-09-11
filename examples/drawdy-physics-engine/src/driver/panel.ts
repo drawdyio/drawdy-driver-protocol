@@ -3,10 +3,13 @@ import { Ctx, stamp, unwrap } from "./context";
 import { physicsMode } from "./meta";
 import { PANEL_HTML } from "./panel-html";
 import {
+    MIN_SANDBOX_H,
+    MIN_SANDBOX_W,
     createSandbox,
-    defaultRectAround,
-    findSandbox,
+    findSandboxes,
+    renameSandbox,
     resizeSandbox,
+    sandboxName,
 } from "./sandbox";
 import { PhysicsSession } from "./session";
 
@@ -21,19 +24,22 @@ export const panelWebviewId = (driverId: string): string =>
 const FLY_MS = 500;
 
 type PanelRow = { id: string; label: string };
+type PanelSandbox = { id: string; name: string; width: number; height: number };
 
 export type WebviewToDriver =
     | { type: "ready" }
-    | { type: "resize-sandbox"; width: number; height: number }
-    | { type: "fit-sandbox" }
-    | { type: "fly-to-sandbox" }
+    | { type: "create-sandbox" }
+    | { type: "resize-sandbox"; id: string; width: number; height: number }
+    | { type: "rename-sandbox"; id: string; name: string }
+    | { type: "delete-sandbox"; id: string }
     | { type: "fly-to"; id: string }
+    | { type: "select"; id: string }
     | { type: "untag"; id: string };
 
 export type DriverToWebview =
     | {
           type: "state";
-          sandbox: { width: number; height: number } | null;
+          sandboxes: PanelSandbox[];
           statics: PanelRow[];
           dynamics: PanelRow[];
       }
@@ -108,7 +114,6 @@ export async function postPanelState(ctx: Ctx): Promise<void> {
             },
         })
     );
-    const sandboxEl = findSandbox(drawdyElements);
     const statics: PanelRow[] = [];
     const dynamics: PanelRow[] = [];
     for (const el of drawdyElements) {
@@ -121,10 +126,12 @@ export async function postPanelState(ctx: Ctx): Promise<void> {
     }
     postToPanel(ctx, {
         type: "state",
-        sandbox:
-            sandboxEl && sandboxEl.width != null && sandboxEl.height != null
-                ? { width: sandboxEl.width, height: sandboxEl.height }
-                : null,
+        sandboxes: findSandboxes(drawdyElements).map((el) => ({
+            id: el.id,
+            name: sandboxName(el) ?? `Sandbox ${el.id.slice(-4)}`,
+            width: el.width ?? 0,
+            height: el.height ?? 0,
+        })),
         statics,
         dynamics,
     });
@@ -140,9 +147,36 @@ export async function handlePanelMessage(
             await postPanelState(ctx);
             return;
         }
+        case "create-sandbox": {
+            // A new box lands centered on the current viewport — camera use
+            // for one-time placement only, nothing simulation-coupled.
+            const { rect } = unwrap(
+                await ctx.issueCommand({
+                    type: "command:camera:get-viewport-rect",
+                    ...stamp(ctx),
+                })
+            );
+            const els = await fetchGeometry(ctx);
+            const count = findSandboxes(els).length;
+            await createSandbox(
+                ctx,
+                {
+                    x: rect.x + rect.width / 2 - MIN_SANDBOX_W / 2,
+                    y: rect.y + rect.height / 2 - MIN_SANDBOX_H / 2,
+                    w: MIN_SANDBOX_W,
+                    h: MIN_SANDBOX_H,
+                },
+                `Sandbox ${count + 1}`
+            );
+            await session.restart();
+            await postPanelState(ctx);
+            return;
+        }
         case "resize-sandbox": {
             const els = await fetchGeometry(ctx);
-            const sandboxEl = findSandbox(els);
+            const sandboxEl = findSandboxes(els).find(
+                (el) => el.id === msg.id
+            );
             if (sandboxEl) {
                 await resizeSandbox(ctx, sandboxEl, msg.width, msg.height);
                 await session.restart();
@@ -150,46 +184,32 @@ export async function handlePanelMessage(
             await postPanelState(ctx);
             return;
         }
-        case "fit-sandbox": {
+        case "rename-sandbox": {
+            const name = msg.name.trim();
+            if (!name) return;
             const els = await fetchGeometry(ctx);
-            const sandboxEl = findSandbox(els);
-            const taggedIds = els
-                .filter((el) => {
-                    const mode = physicsMode(el);
-                    return mode === "static" || mode === "dynamic";
-                })
-                .map((el) => el.id);
-            if (taggedIds.length === 0) return;
-            const { rect } = unwrap(
-                await ctx.issueCommand({
-                    type: "command:scene:query-combined-rect",
-                    ...stamp(ctx),
-                    req: { drawdyElementIds: taggedIds },
-                })
+            const sandboxEl = findSandboxes(els).find(
+                (el) => el.id === msg.id
             );
-            const box = defaultRectAround(rect);
             if (sandboxEl) {
-                await resizeSandbox(ctx, sandboxEl, box.w, box.h);
-            } else {
-                await createSandbox(ctx, box);
+                // The on-canvas label rides the re-added element; restart so
+                // a run interrupted by the remove picks its walls back up.
+                await renameSandbox(ctx, sandboxEl, name);
+                await session.restart();
             }
-            await session.restart();
             await postPanelState(ctx);
             return;
         }
-        case "fly-to-sandbox": {
-            const els = await fetchGeometry(ctx);
-            const sandboxEl = findSandbox(els);
-            if (!sandboxEl) return;
-            await ctx.issueCommand({
-                type: "command:camera:fly-to-elements",
-                ...stamp(ctx),
-                req: {
-                    drawdyElementIds: [sandboxEl.id],
-                    flyDurationMs: FLY_MS,
-                    zoom: 1,
-                },
-            });
+        case "delete-sandbox": {
+            unwrap(
+                await ctx.issueCommand({
+                    type: "command:scene:remove-drawdy-elements",
+                    ...stamp(ctx),
+                    req: { drawdyElementIds: [msg.id] },
+                })
+            );
+            // The session's elements-removed handler tears down its walls.
+            await postPanelState(ctx);
             return;
         }
         case "fly-to": {
@@ -201,6 +221,14 @@ export async function handlePanelMessage(
                     flyDurationMs: FLY_MS,
                     zoom: 1,
                 },
+            });
+            return;
+        }
+        case "select": {
+            await ctx.issueCommand({
+                type: "command:scene:set-selection",
+                ...stamp(ctx),
+                req: { drawdyElementIds: [msg.id] },
             });
             return;
         }

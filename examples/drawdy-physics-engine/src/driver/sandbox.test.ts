@@ -2,9 +2,11 @@ import {
     MIN_SANDBOX_H,
     MIN_SANDBOX_W,
     defaultRectAround,
-    findSandbox,
+    findSandboxes,
     isInside,
     isPointInside,
+    sandboxName,
+    singleLineName,
 } from "./sandbox";
 
 const rect = { x: 0, y: 0, w: 1000, h: 800 };
@@ -58,16 +60,16 @@ describe("defaultRectAround", () => {
     });
 });
 
-describe("findSandbox", () => {
-    const sandbox = (id: string, geom = true) => ({
+describe("findSandboxes", () => {
+    const sandbox = (id: string, geom = true, name?: string) => ({
         id,
-        meta: { physics: { mode: "sandbox" } },
+        meta: { physics: name ? { mode: "sandbox", name } : { mode: "sandbox" } },
         ...(geom ? { x: 0, y: 0, width: 100, height: 100 } : {}),
     });
 
-    it("picks the lowest id so concurrent clients converge", () => {
+    it("returns every sandbox, id-sorted, so all clients list them alike", () => {
         const els = [sandbox("b"), sandbox("a"), sandbox("c")];
-        expect(findSandbox(els)?.id).toBe("a");
+        expect(findSandboxes(els).map((el) => el.id)).toEqual(["a", "b", "c"]);
     });
 
     it("ignores sandboxes without geometry and non-sandbox elements", () => {
@@ -76,10 +78,39 @@ describe("findSandbox", () => {
             { id: "x", meta: { physics: { mode: "dynamic" } } },
             sandbox("b"),
         ];
-        expect(findSandbox(els)?.id).toBe("b");
+        expect(findSandboxes(els).map((el) => el.id)).toEqual(["b"]);
     });
 
-    it("returns null when there is none", () => {
-        expect(findSandbox([{ id: "x" }])).toBeNull();
+    it("returns an empty list when there is none", () => {
+        expect(findSandboxes([{ id: "x" }])).toEqual([]);
+    });
+});
+
+describe("singleLineName", () => {
+    it("collapses line breaks (and surrounding spaces) to one space", () => {
+        expect(singleLineName("Ball\npit")).toBe("Ball pit");
+        expect(singleLineName("Ball  \r\n  pit\n\n2")).toBe("Ball pit 2");
+        expect(singleLineName("  plain  ")).toBe("plain");
+        expect(singleLineName("\n\n")).toBe("");
+    });
+});
+
+describe("sandboxName", () => {
+    it("reads meta.physics.name, treating blank as unnamed", () => {
+        expect(
+            sandboxName({
+                id: "a",
+                meta: { physics: { mode: "sandbox", name: "Pit" } },
+            })
+        ).toBe("Pit");
+        expect(
+            sandboxName({
+                id: "a",
+                meta: { physics: { mode: "sandbox", name: "  " } },
+            })
+        ).toBeNull();
+        expect(
+            sandboxName({ id: "a", meta: { physics: { mode: "sandbox" } } })
+        ).toBeNull();
     });
 });

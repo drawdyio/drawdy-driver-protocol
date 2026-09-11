@@ -21,19 +21,33 @@ body {
     flex-direction: column;
     height: 100vh;
 }
-main { flex: 1; overflow-y: auto; padding: 12px; }
+main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+section {
+    border: 1px solid var(--drawdy-border, #e5e5e5);
+    border-radius: var(--drawdy-radius-lg, 12px);
+    padding: 10px;
+}
+.sec-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 8px;
+}
 .sec-label {
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--drawdy-muted-foreground, #888);
-    margin: 16px 0 8px;
 }
-.sec-label:first-child { margin-top: 0; }
-.size-row { display: flex; gap: 6px; align-items: center; }
-.size-row input {
-    width: 72px;
+input {
     height: 28px;
     padding: 2px 8px;
     font: inherit;
@@ -43,11 +57,13 @@ main { flex: 1; overflow-y: auto; padding: 12px; }
     border-radius: var(--drawdy-radius-md, 8px);
     outline: none;
 }
-.size-row input:focus-visible {
+input:focus-visible {
     box-shadow: 0 0 0 2px var(--drawdy-ring, #94ba00);
 }
-.size-row .x { color: var(--drawdy-muted-foreground, #888); }
 button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     height: 28px;
     padding: 0 10px;
     font: inherit;
@@ -59,13 +75,41 @@ button {
     cursor: pointer;
 }
 button:hover { border-color: var(--drawdy-primary, #6366f1); }
-.btn-row { display: flex; gap: 6px; margin-top: 8px; }
+.icon-btn { width: 28px; padding: 0; }
+.sb-item {
+    border: 1px solid var(--drawdy-border, #e5e5e5);
+    border-radius: var(--drawdy-radius-md, 8px);
+    margin-bottom: 6px;
+    overflow: hidden;
+}
+.sb-item:last-child { margin-bottom: 0; }
+.sb-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    user-select: none;
+}
+.sb-name {
+    flex: 1;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sb-name-edit { flex: 1; width: 0; min-width: 0; height: 24px; font-weight: 500; }
+.sb-dim { color: var(--drawdy-muted-foreground, #888); font-size: 11px; }
+.sb-body { padding: 2px 8px 8px; display: flex; flex-direction: column; gap: 6px; }
+.size-row { display: flex; gap: 6px; align-items: center; }
+.size-row input { flex: 1; width: 0; min-width: 0; }
+.size-row .x { color: var(--drawdy-muted-foreground, #888); }
 .row {
     display: flex;
     align-items: center;
     gap: 6px;
     padding: 5px 6px;
     border-radius: var(--drawdy-radius-md, 8px);
+    cursor: pointer;
 }
 .row:hover { background: var(--drawdy-surface, #f4f4f4); }
 .row .name {
@@ -75,46 +119,166 @@ button:hover { border-color: var(--drawdy-primary, #6366f1); }
     white-space: nowrap;
 }
 .row .id { color: var(--drawdy-muted-foreground, #888); font-size: 11px; }
-.row button { height: 22px; padding: 0 7px; font-size: 11px; }
+.row button { height: 22px; width: 22px; padding: 0; font-size: 12px; }
 .empty { font-size: 12px; color: var(--drawdy-muted-foreground, #888); padding: 4px 6px; }
-.hint { font-size: 11px; color: var(--drawdy-muted-foreground, #888); margin-top: 6px; }
+.hint {
+    font-size: 10.5px;
+    font-style: italic;
+    color: var(--drawdy-muted-foreground, #888);
+    margin-top: 8px;
+}
 </style>
 </head>
 <body>
 <main>
-    <div class="sec-label">Sandbox</div>
-    <div id="sandbox-none" class="empty" hidden>
-        No sandbox yet — it appears around your tagged elements when the
-        first simulation runs.
-    </div>
-    <div id="sandbox-controls" hidden>
-        <div class="size-row">
-            <input id="sb-w" type="number" min="200" step="50" />
-            <span class="x">×</span>
-            <input id="sb-h" type="number" min="200" step="50" />
-            <button id="sb-apply">Apply</button>
+    <section>
+        <div class="sec-head">
+            <span class="sec-label">Sandboxes</span>
+            <button id="sb-new">+ New</button>
         </div>
-        <div class="btn-row">
-            <button id="sb-fit">Fit to content</button>
-            <button id="sb-fly">Fly to sandbox</button>
-        </div>
-        <div class="hint">Elements leaving the sandbox lose their physics tag.</div>
-    </div>
+        <div id="sandbox-list"></div>
+        <div class="hint">* Elements leaving a sandbox lose their physics.</div>
+    </section>
 
-    <div class="sec-label">Static colliders</div>
-    <div id="static-list"></div>
+    <section>
+        <div class="sec-label sec-head">Static colliders</div>
+        <div id="static-list"></div>
+    </section>
 
-    <div class="sec-label">Dynamic bodies</div>
-    <div id="dynamic-list"></div>
+    <section>
+        <div class="sec-label sec-head">Dynamic bodies</div>
+        <div id="dynamic-list"></div>
+    </section>
 </main>
 <script>
 (function () {
     var api = acquireDrawdyApi();
     var themeStyle = document.getElementById("theme");
-    var sbNone = document.getElementById("sandbox-none");
-    var sbControls = document.getElementById("sandbox-controls");
-    var sbW = document.getElementById("sb-w");
-    var sbH = document.getElementById("sb-h");
+    var sandboxList = document.getElementById("sandbox-list");
+    var pendingState = null;
+
+    function renderSandboxes(items) {
+        sandboxList.textContent = "";
+        if (items.length === 0) {
+            var empty = document.createElement("div");
+            empty.className = "empty";
+            empty.textContent =
+                "No sandbox yet — one appears around your tagged elements " +
+                "when the first simulation runs.";
+            sandboxList.appendChild(empty);
+            return;
+        }
+        items.forEach(function (item) {
+            var box = document.createElement("div");
+            box.className = "sb-item";
+
+            var head = document.createElement("div");
+            head.className = "sb-head";
+            var name = document.createElement("span");
+            name.className = "sb-name";
+            name.textContent = item.name;
+            name.title = "Double-click to rename";
+            var dim = document.createElement("span");
+            dim.className = "sb-dim";
+            dim.textContent =
+                Math.round(item.width) + "\\u00d7" + Math.round(item.height);
+            head.appendChild(name);
+            head.appendChild(dim);
+            box.appendChild(head);
+
+            var body = document.createElement("div");
+            body.className = "sb-body";
+
+            var sizeRow = document.createElement("div");
+            sizeRow.className = "size-row";
+            var w = document.createElement("input");
+            w.type = "number";
+            w.min = "200";
+            w.step = "50";
+            w.value = String(Math.round(item.width));
+            var x = document.createElement("span");
+            x.className = "x";
+            x.textContent = "\\u00d7";
+            var h = document.createElement("input");
+            h.type = "number";
+            h.min = "200";
+            h.step = "50";
+            h.value = String(Math.round(item.height));
+            var apply = document.createElement("button");
+            apply.textContent = "Apply";
+            apply.addEventListener("click", function () {
+                var wv = Number(w.value);
+                var hv = Number(h.value);
+                if (!isFinite(wv) || !isFinite(hv) || wv < 200 || hv < 200) {
+                    return;
+                }
+                api.postMessage({
+                    type: "resize-sandbox",
+                    id: item.id,
+                    width: wv,
+                    height: hv,
+                });
+            });
+            var fly = document.createElement("button");
+            fly.className = "icon-btn";
+            fly.textContent = "\\u2192";
+            fly.title = "Fly to sandbox";
+            fly.addEventListener("click", function () {
+                api.postMessage({ type: "fly-to", id: item.id });
+            });
+            var del = document.createElement("button");
+            del.className = "icon-btn";
+            del.textContent = "\\u{1F5D1}\\uFE0F";
+            del.title = "Delete sandbox";
+            del.addEventListener("click", function () {
+                api.postMessage({ type: "delete-sandbox", id: item.id });
+            });
+            sizeRow.appendChild(w);
+            sizeRow.appendChild(x);
+            sizeRow.appendChild(h);
+            sizeRow.appendChild(apply);
+            sizeRow.appendChild(fly);
+            sizeRow.appendChild(del);
+            body.appendChild(sizeRow);
+            box.appendChild(body);
+
+            name.addEventListener("dblclick", function (e) {
+                e.stopPropagation();
+                var edit = document.createElement("input");
+                edit.type = "text";
+                edit.className = "sb-name-edit";
+                edit.value = item.name;
+                var done = false;
+                var finish = function (commit) {
+                    if (done) return;
+                    done = true;
+                    var next = edit.value.trim();
+                    if (commit && next && next !== item.name) {
+                        item.name = next;
+                        name.textContent = next;
+                        api.postMessage({
+                            type: "rename-sandbox",
+                            id: item.id,
+                            name: next,
+                        });
+                    }
+                    edit.replaceWith(name);
+                };
+                edit.addEventListener("blur", function () {
+                    finish(true);
+                });
+                edit.addEventListener("keydown", function (ev) {
+                    if (ev.key === "Enter") finish(true);
+                    if (ev.key === "Escape") finish(false);
+                });
+                name.replaceWith(edit);
+                edit.focus();
+                edit.select();
+            });
+
+            sandboxList.appendChild(box);
+        });
+    }
 
     function renderList(rootId, items) {
         var root = document.getElementById(rootId);
@@ -129,6 +293,10 @@ button:hover { border-color: var(--drawdy-primary, #6366f1); }
         items.forEach(function (item) {
             var row = document.createElement("div");
             row.className = "row";
+            row.title = "Select in scene";
+            row.addEventListener("click", function () {
+                api.postMessage({ type: "select", id: item.id });
+            });
             var name = document.createElement("span");
             name.className = "name";
             name.textContent = item.label + " ";
@@ -137,14 +305,17 @@ button:hover { border-color: var(--drawdy-primary, #6366f1); }
             id.textContent = item.id.slice(-4);
             name.appendChild(id);
             var fly = document.createElement("button");
-            fly.textContent = "Fly to";
-            fly.addEventListener("click", function () {
+            fly.textContent = "\\u2192";
+            fly.title = "Fly to";
+            fly.addEventListener("click", function (e) {
+                e.stopPropagation();
                 api.postMessage({ type: "fly-to", id: item.id });
             });
             var untag = document.createElement("button");
             untag.textContent = "\\u2715";
             untag.title = "Remove physics tag";
-            untag.addEventListener("click", function () {
+            untag.addEventListener("click", function (e) {
+                e.stopPropagation();
                 api.postMessage({ type: "untag", id: item.id });
             });
             row.appendChild(name);
@@ -154,6 +325,12 @@ button:hover { border-color: var(--drawdy-primary, #6366f1); }
         });
     }
 
+    function renderState(msg) {
+        renderSandboxes(msg.sandboxes);
+        renderList("static-list", msg.statics);
+        renderList("dynamic-list", msg.dynamics);
+    }
+
     api.onMessage(function (msg) {
         if (!msg || typeof msg !== "object") return;
         if (msg.type === "theme") {
@@ -161,28 +338,26 @@ button:hover { border-color: var(--drawdy-primary, #6366f1); }
             return;
         }
         if (msg.type !== "state") return;
-        var hasSandbox = !!msg.sandbox;
-        sbNone.hidden = hasSandbox;
-        sbControls.hidden = !hasSandbox;
-        if (hasSandbox && document.activeElement !== sbW && document.activeElement !== sbH) {
-            sbW.value = String(Math.round(msg.sandbox.width));
-            sbH.value = String(Math.round(msg.sandbox.height));
+        // Never re-render under the user's cursor mid-edit.
+        if (sandboxList.contains(document.activeElement)) {
+            pendingState = msg;
+            return;
         }
-        renderList("static-list", msg.statics);
-        renderList("dynamic-list", msg.dynamics);
+        renderState(msg);
     });
 
-    document.getElementById("sb-apply").addEventListener("click", function () {
-        var w = Number(sbW.value);
-        var h = Number(sbH.value);
-        if (!isFinite(w) || !isFinite(h) || w < 200 || h < 200) return;
-        api.postMessage({ type: "resize-sandbox", width: w, height: h });
+    sandboxList.addEventListener("focusout", function () {
+        setTimeout(function () {
+            if (pendingState && !sandboxList.contains(document.activeElement)) {
+                var msg = pendingState;
+                pendingState = null;
+                renderState(msg);
+            }
+        }, 0);
     });
-    document.getElementById("sb-fit").addEventListener("click", function () {
-        api.postMessage({ type: "fit-sandbox" });
-    });
-    document.getElementById("sb-fly").addEventListener("click", function () {
-        api.postMessage({ type: "fly-to-sandbox" });
+
+    document.getElementById("sb-new").addEventListener("click", function () {
+        api.postMessage({ type: "create-sandbox" });
     });
 
     api.postMessage({ type: "ready" });

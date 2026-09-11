@@ -13,7 +13,7 @@ import {
     SandboxRect,
     createSandbox,
     defaultRectAround,
-    findSandbox,
+    findSandboxes,
     isInside,
     isPointInside,
     sandboxRect,
@@ -148,8 +148,8 @@ export class PhysicsSession {
     private _draggedIds = new Set<string>();
     /** Gates the load-time auto-start retries. */
     public hasEverRun = false;
-    private _sandboxId: string | null = null;
-    private _sandboxRect: SandboxRect | null = null;
+    /** Every sandbox on the board: element id → interior rect. */
+    private _sandboxes = new Map<string, SandboxRect>();
     /** Pose deltas of bodies that escaped mid-run, kept for the commit. */
     private _escaped = new Map<
         string,
@@ -294,13 +294,14 @@ export class PhysicsSession {
 
     /** An element was deleted on the board — drop its body mid-run. */
     onElementsRemoved(ids: string[]): void {
-        if (this._sandboxId && ids.includes(this._sandboxId)) {
-            // Sandbox gone: bank the poses and go idle. The next run start
-            // creates a fresh sandbox, so nothing simulates unbounded.
-            this._idleGeom.delete(this._sandboxId);
-            this._sandboxId = null;
-            this._sandboxRect = null;
-            if (this._world) {
+        for (const id of ids) {
+            if (!this._sandboxes.delete(id)) continue;
+            // A deleted sandbox takes its walls with it; the escape scan
+            // untags whatever it contained. With no sandbox left at all,
+            // bank the poses and go idle instead of simulating unbounded.
+            this._idleGeom.delete(id);
+            this._removeWalls(id);
+            if (this._sandboxes.size === 0 && this._world) {
                 void this._commitAndStop();
                 return;
             }
@@ -343,20 +344,18 @@ export class PhysicsSession {
                 this._idleGeom.set(el.id, now);
                 if (!before || !geomChanged(before, now)) continue;
                 if (mode === "sandbox") {
-                    if (el.id === this._sandboxId) {
-                        this._sandboxRect = {
-                            x: now.x,
-                            y: now.y,
-                            w: now.w,
-                            h: now.h,
-                        };
-                        trigger = true;
-                    }
+                    this._sandboxes.set(el.id, {
+                        x: now.x,
+                        y: now.y,
+                        w: now.w,
+                        h: now.h,
+                    });
+                    trigger = true;
                     continue;
                 }
                 const rest = this._lastRunRest.get(el.id);
                 if (rest && !geomChanged(rest, now)) continue; // undo
-                if (this._sandboxRect && !isInside(this._sandboxRect, now)) {
+                if (this._sandboxes.size > 0 && !this._insideAny(now)) {
                     void this._untag([el.id]);
                     continue;
                 }
@@ -371,11 +370,19 @@ export class PhysicsSession {
             return;
         }
         for (const el of els) {
-            if (el.id === this._sandboxId) {
+            if (this._sandboxes.has(el.id)) {
                 const rect = sandboxRect(el);
-                if (rect) {
-                    this._sandboxRect = rect;
-                    this._buildWalls(this._world);
+                const prev = this._sandboxes.get(el.id);
+                if (
+                    rect &&
+                    prev &&
+                    (rect.x !== prev.x ||
+                        rect.y !== prev.y ||
+                        rect.w !== prev.w ||
+                        rect.h !== prev.h)
+                ) {
+                    this._sandboxes.set(el.id, rect);
+                    this._buildWallsFor(this._world, el.id, rect);
                     this._settleMs = 0;
                 }
                 continue;
@@ -446,12 +453,12 @@ export class PhysicsSession {
             return;
         }
 
-        // Adopt the board's sandbox, or create one around the tagged content.
-        const sandboxEl = findSandbox(drawdyElements);
-        if (sandboxEl) {
-            this._sandboxId = sandboxEl.id;
-            this._sandboxRect = sandboxRect(sandboxEl);
-        } else {
+        // Adopt the board's sandboxes, or create one around the tagged content.
+        const sandboxEls = findSandboxes(drawdyElements);
+        this._sandboxes = new Map(
+            sandboxEls.map((el) => [el.id, sandboxRect(el)!])
+        );
+        if (this._sandboxes.size === 0) {
             const { rect } = unwrap(
                 await ctx.issueCommand({
                     type: "command:scene:query-combined-rect",
@@ -464,18 +471,17 @@ export class PhysicsSession {
                 })
             );
             const box = defaultRectAround(rect);
-            this._sandboxId = await createSandbox(ctx, box);
-            this._sandboxRect = box;
+            const id = await createSandbox(ctx, box, "Sandbox 1");
+            this._sandboxes.set(id, box);
             console.info(
                 `[drawdy-physics] sandbox created ${Math.round(box.w)}x${Math.round(box.h)}`
             );
         }
 
-        // Elements outside the sandbox lose their tag and stay out of the world.
-        const box = this._sandboxRect;
+        // Elements outside every sandbox lose their tag and stay out of the world.
         const inBox = (el: SubscribedDrawdyElement): boolean => {
             const g = sourceGeomOf(el);
-            return !box || !g || isInside(box, g);
+            return !g || this._insideAny(g);
         };
         const escapedIds = [...allDynamic, ...allStatic]
             .filter((el) => !inBox(el))
@@ -522,7 +528,9 @@ export class PhysicsSession {
             const src = sourceGeomOf(el);
             if (src) this._sourceGeom.set(el.id, src);
         }
-        this._buildWalls(world);
+        for (const [id, rect] of this._sandboxes) {
+            this._buildWallsFor(world, id, rect);
+        }
         if (world.bodies.every((b) => b.isStatic)) {
             this._world = world;
             await this._commitAndStop();
@@ -643,10 +651,10 @@ export class PhysicsSession {
 
                 // A body whose center escaped the sandbox (tunneling) loses
                 // its tag; its pose is banked for the final commit.
-                if (this._sandboxRect) {
+                if (this._sandboxes.size > 0) {
                     for (const b of [...this._world.bodies]) {
                         if (b.isStatic || this._releasing.has(b.id)) continue;
-                        if (isPointInside(this._sandboxRect, b.pos)) continue;
+                        if (this._pointInsideAny(b.pos)) continue;
                         this._escaped.set(b.id, {
                             dx: b.pos.x - b.restPos.x,
                             dy: b.pos.y - b.restPos.y,
@@ -747,11 +755,7 @@ export class PhysicsSession {
                     // live. The re-begun rest pose IS the dragged pose, so
                     // end-preview leaves the element where the user put it.
                     const g = sourceGeomOf(hold.el);
-                    if (
-                        this._sandboxRect &&
-                        g &&
-                        !isInside(this._sandboxRect, g)
-                    ) {
+                    if (this._sandboxes.size > 0 && g && !this._insideAny(g)) {
                         void this._untag([id]);
                         return;
                     }
@@ -797,12 +801,43 @@ export class PhysicsSession {
         }
     }
 
-    /** Four thick static walls hugging the sandbox rect's outside. */
-    private _buildWalls(world: World | null): void {
-        if (!world || !this._sandboxRect) return;
-        const { x, y, w, h } = this._sandboxRect;
+    private _insideAny(geom: {
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+    }): boolean {
+        for (const rect of this._sandboxes.values()) {
+            if (isInside(rect, geom)) return true;
+        }
+        return false;
+    }
+
+    private _pointInsideAny(p: { x: number; y: number }): boolean {
+        for (const rect of this._sandboxes.values()) {
+            if (isPointInside(rect, p)) return true;
+        }
+        return false;
+    }
+
+    private _removeWalls(sandboxId: string): void {
+        const world = this._world;
+        if (!world) return;
         for (const side of ["top", "bottom", "left", "right"]) {
-            world.remove(`${WALL_ID_PREFIX}${side}`);
+            world.remove(`${WALL_ID_PREFIX}${sandboxId}:${side}`);
+        }
+    }
+
+    /** Four thick static walls hugging one sandbox rect's outside. */
+    private _buildWallsFor(
+        world: World | null,
+        sandboxId: string,
+        rect: SandboxRect
+    ): void {
+        if (!world) return;
+        const { x, y, w, h } = rect;
+        for (const side of ["top", "bottom", "left", "right"]) {
+            world.remove(`${WALL_ID_PREFIX}${sandboxId}:${side}`);
         }
         const T = WALL_THICKNESS;
         const walls: {
@@ -813,28 +848,28 @@ export class PhysicsSession {
             maxY: number;
         }[] = [
             {
-                id: `${WALL_ID_PREFIX}top`,
+                id: `${WALL_ID_PREFIX}${sandboxId}:top`,
                 minX: x - T,
                 minY: y - T,
                 maxX: x + w + T,
                 maxY: y,
             },
             {
-                id: `${WALL_ID_PREFIX}bottom`,
+                id: `${WALL_ID_PREFIX}${sandboxId}:bottom`,
                 minX: x - T,
                 minY: y + h,
                 maxX: x + w + T,
                 maxY: y + h + T,
             },
             {
-                id: `${WALL_ID_PREFIX}left`,
+                id: `${WALL_ID_PREFIX}${sandboxId}:left`,
                 minX: x - T,
                 minY: y,
                 maxX: x,
                 maxY: y + h,
             },
             {
-                id: `${WALL_ID_PREFIX}right`,
+                id: `${WALL_ID_PREFIX}${sandboxId}:right`,
                 minX: x + w,
                 minY: y,
                 maxX: x + w + T,
