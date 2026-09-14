@@ -19,6 +19,8 @@ export type DrawdyElementSchema =
           points: number[];
           width: number;
           height: number;
+          /** Render the stroke as a Catmull-Rom spline through its points. */
+          spline?: boolean;
           meta: Record<string, any>;
       })
     | (DrawdyElementCommon & {
