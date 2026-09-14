@@ -26,7 +26,6 @@
         "typecheck": "tsc --noEmit",
         "build": "tsc -p tsconfig.build.json",
         "prepublishOnly": "npm run build",
-        "test": "jest --passWithNoTests",
         "docs:dev": "pnpm --filter drawdy-driver-protocol-docs dev",
         "bump": "node bump.mjs",
         "docs:validate": "pnpm --filter drawdy-driver-protocol-docs validate"
