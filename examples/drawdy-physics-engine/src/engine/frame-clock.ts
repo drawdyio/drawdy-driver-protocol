@@ -33,6 +33,11 @@ export class FrameClock {
         return steps;
     }
 
+    reset(nowMs: number): void {
+        this._last = nowMs;
+        this._debtMs = 0;
+    }
+
     /**
      * Return unexecuted substeps to the debt (a frame ran out of its wall
      * budget) so simulated time still tracks the clock instead of warping.

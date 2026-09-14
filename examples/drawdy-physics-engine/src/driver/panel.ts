@@ -45,10 +45,7 @@ export type DriverToWebview =
       }
     | { type: "theme"; css: string };
 
-/**
- * ModuleStyling as `--drawdy-*` css variable declarations for the webview's
- * `:root` placeholder, e.g. `mutedForeground` -> `--drawdy-muted-foreground`.
- */
+
 export function stylingCssVars(styling: ModuleStyling): string {
     return Object.entries(styling)
         .map(([key, value]) =>

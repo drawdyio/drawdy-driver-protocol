@@ -58,38 +58,19 @@ const SUBSTEP_WALL_MS = 1000 / (TICK * SIM_MULTIPLIER);
 const MAX_CATCHUP_SUBSTEPS = 30;
 /** Debt cap: longer gaps are suspension (tab sleep), not debt. */
 const MAX_DEBT_MS = 1000;
-/** Preview sends allowed in flight; beyond it, latest-wins skip. */
-const MAX_SENDS_IN_FLIGHT = 2;
+/**
+ * A reply this late means the host held it (playback paused, tab hidden):
+ * the gap is dropped instead of being simulated as catch-up.
+ */
+const PAUSE_GAP_MS = 250;
+/** A reply this late means the message was lost; resend without stepping. */
+const REPLY_TIMEOUT_MS = 2000;
 /**
  * Wall budget for one frame's stepping. A pathological pile can't produce
  * multi-hundred-ms frames — unexecuted substeps are refunded to the clock
  * and repaid later, so gravity stays wall-true while frames stay responsive.
  */
 const STEP_BUDGET_MS = 30;
-
-/**
- * Frame scheduler: requestAnimationFrame when the worker exposes it (smooth,
- * display-synced), raced against a timeout so a throttled rAF can't stall
- * the simulation. Whichever fires first runs the frame once.
- */
-const scheduleFrame = (cb: () => void): void => {
-    let done = false;
-    const run = () => {
-        if (done) return;
-        done = true;
-        cb();
-    };
-    const timer = setTimeout(run, 1000 / TICK);
-    const raf = (
-        globalThis as { requestAnimationFrame?: (cb: () => void) => number }
-    ).requestAnimationFrame;
-    if (typeof raf === "function") {
-        raf(() => {
-            clearTimeout(timer);
-            run();
-        });
-    }
-};
 
 type SourceGeom = {
     x: number;
@@ -575,11 +556,9 @@ export class PhysicsSession {
         // (worker timer throttling, busy frames) never changes the gravity
         // scale — late frames catch up instead of playing in slow motion.
         this._running = true;
-        let inFlight = 0;
-        let lastSendAt = 0;
         // One-line perf telemetry per second — separates scheduling
         // collapse (low frames/s) from step cost (high stepMs) from
-        // round-trip gating (high rtt / skips).
+        // round-trip gating (high rtt).
         const perf = {
             windowStart: performance.now(),
             frames: 0,
@@ -588,7 +567,6 @@ export class PhysicsSession {
             stepMsTotal: 0,
             stepMsMax: 0,
             sends: 0,
-            sendSkips: 0,
             rttTotal: 0,
             rttCount: 0,
         };
@@ -600,7 +578,7 @@ export class PhysicsSession {
                 `[drawdy-physics] perf: frames ${Math.round((perf.frames * 1000) / dt)}/s, ` +
                     `substeps ${Math.round((perf.substeps * 1000) / dt)}/s (refunded ${Math.round((perf.refunded * 1000) / dt)}/s), ` +
                     `step avg ${(perf.substeps ? perf.stepMsTotal / perf.substeps : 0).toFixed(2)}ms max ${perf.stepMsMax.toFixed(1)}ms, ` +
-                    `sends ${Math.round((perf.sends * 1000) / dt)}/s (skips ${Math.round((perf.sendSkips * 1000) / dt)}/s), ` +
+                    `sends ${Math.round((perf.sends * 1000) / dt)}/s, ` +
                     `rtt avg ${(perf.rttCount ? perf.rttTotal / perf.rttCount : 0).toFixed(0)}ms, ` +
                     `bodies ${world?.bodies.length ?? 0}, pairs ${world?.lastPairCount ?? 0}, contacts ${world?.lastContactCount ?? 0}`
             );
@@ -611,7 +589,6 @@ export class PhysicsSession {
             perf.stepMsTotal = 0;
             perf.stepMsMax = 0;
             perf.sends = 0;
-            perf.sendSkips = 0;
             perf.rttTotal = 0;
             perf.rttCount = 0;
         };
@@ -621,12 +598,60 @@ export class PhysicsSession {
             MAX_DEBT_MS
         );
         clock.tick(performance.now());
+        const run = this._world;
+        let lastReplyAt = performance.now();
+
+        const send = (): void => {
+            if (!this._running || this._world !== run) return;
+            perf.sends++;
+            const sentAt = performance.now();
+            let settled = false;
+            const timeout = setTimeout(() => {
+                if (settled) return;
+                settled = true;
+                send();
+            }, REPLY_TIMEOUT_MS);
+            const previews = run.poseDeltas().map((d) => ({
+                drawdyElementId: d.id,
+                transform: {
+                    x: d.dx,
+                    y: d.dy,
+                    scale: 1,
+                    rotation: d.dRotation,
+                },
+            }));
+            void ctx
+                .issueCommand({
+                    type: "command:scene:preview-transforms",
+                    ...stamp(ctx),
+                    req: { previews },
+                })
+                .then(
+                    () => {
+                        if (settled) return;
+                        settled = true;
+                        clearTimeout(timeout);
+                        perf.rttTotal += performance.now() - sentAt;
+                        perf.rttCount++;
+                        frame();
+                    },
+                    () => {
+                        if (settled) return;
+                        settled = true;
+                        clearTimeout(timeout);
+                        setTimeout(frame, 1000 / TICK);
+                    }
+                );
+        };
+
         const frame = () => {
-            if (!this._running || !this._world) return;
+            if (!this._running || this._world !== run) return;
 
             const frameNow = performance.now();
             perf.frames++;
             reportPerf(frameNow);
+            if (frameNow - lastReplyAt > PAUSE_GAP_MS) clock.reset(frameNow);
+            lastReplyAt = frameNow;
             const steps = clock.tick(frameNow);
 
             if (steps > 0) {
@@ -635,7 +660,7 @@ export class PhysicsSession {
                 let executed = 0;
                 for (let i = 0; i < steps; i++) {
                     const stepStart = performance.now();
-                    this._world.step(TIME_STEP);
+                    run.step(TIME_STEP);
                     const stepMs = performance.now() - stepStart;
                     perf.stepMsTotal += stepMs;
                     if (stepMs > perf.stepMsMax) perf.stepMsMax = stepMs;
@@ -654,7 +679,7 @@ export class PhysicsSession {
                 // A body whose center escaped the sandbox (tunneling) loses
                 // its tag; its pose is banked for the final commit.
                 if (this._sandboxes.size > 0) {
-                    for (const b of [...this._world.bodies]) {
+                    for (const b of [...run.bodies]) {
                         if (b.isStatic || this._releasing.has(b.id)) continue;
                         if (this._pointInsideAny(b.pos)) continue;
                         this._escaped.set(b.id, {
@@ -662,14 +687,12 @@ export class PhysicsSession {
                             dy: b.pos.y - b.restPos.y,
                             dRotation: b.angle,
                         });
-                        this._world.remove(b.id);
+                        run.remove(b.id);
                         void this._untag([b.id]);
                     }
                 }
 
-                const dynamics = this._world.bodies.filter(
-                    (b) => !b.isStatic
-                );
+                const dynamics = run.bodies.filter((b) => !b.isStatic);
                 if (this._held.size > 0) {
                     this._settleMs = 0; // never commit under a drag
                 } else {
@@ -687,48 +710,14 @@ export class PhysicsSession {
                         return;
                     }
                 }
-
-                // A small in-flight window (latest-wins beyond it) keeps
-                // the visible motion from freezing on one slow round-trip;
-                // stepping above never waits either way. Watchdog clears
-                // lost replies so a dropped message can't gate forever.
-                if (inFlight > 0 && Date.now() - lastSendAt >= 2000) {
-                    inFlight = 0;
-                }
-                if (inFlight >= MAX_SENDS_IN_FLIGHT) perf.sendSkips++;
-                if (inFlight < MAX_SENDS_IN_FLIGHT) {
-                    inFlight++;
-                    lastSendAt = Date.now();
-                    perf.sends++;
-                    const sentAt = performance.now();
-                    const previews = this._world.poseDeltas().map((d) => ({
-                        drawdyElementId: d.id,
-                        transform: {
-                            x: d.dx,
-                            y: d.dy,
-                            scale: 1,
-                            rotation: d.dRotation,
-                        },
-                    }));
-                    void ctx
-                        .issueCommand({
-                            type: "command:scene:preview-transforms",
-                            ...stamp(ctx),
-                            req: { previews },
-                        })
-                        .finally(() => {
-                            inFlight = Math.max(0, inFlight - 1);
-                            perf.rttTotal += performance.now() - sentAt;
-                            perf.rttCount++;
-                        });
-                }
+                send();
+                return;
             }
 
-            scheduleFrame(frame);
+            setTimeout(send, SUBSTEP_WALL_MS);
         };
-        scheduleFrame(frame);
+        send();
     }
-
 
     /**
      * Drag ended: re-snapshot the rest pose at the host (so ticks bake from
