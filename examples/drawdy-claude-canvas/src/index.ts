@@ -4,7 +4,7 @@ import {
     DriverModule,
     ModuleStyling,
 } from "@drawdy/driver-protocol";
-import { WEBVIEW_HTML } from "virtual:webview-html";
+import { WEBVIEW_HTML } from "./webview-html";
 import {
     Attachment,
     ChatEntry,
