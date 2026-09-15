@@ -18,6 +18,8 @@ type CameraMovedEventBody = {
     zoom: number;
 };
 
+export type LaserStroke = [number, number][];
+
 type MappedCoordinate = {
     domSpace: { x: number; y: number };
     canvasSpace: { x: number; y: number };
@@ -119,7 +121,8 @@ export type DriverSubscription =
     | ProtocolSubscription<
           "subscription:scene:drawdy-elements-dragged",
           undefined
-      >;
+      >
+    | ProtocolSubscription<"subscription:tool:laser", undefined>;
 
 export type DriverSubscriptionEvent =
     | ProtocolSubscriptionEvent<
@@ -327,6 +330,13 @@ export type DriverSubscriptionEvent =
           | {
                 type: "dragEnd";
             }
+      >
+    | ProtocolSubscriptionEvent<
+          "subscription:tool:laser",
+          {
+              type: "laser-state-update";
+              lasers: LaserStroke[];
+          }
       >;
 
 // Yes, subscription is just a specialized command

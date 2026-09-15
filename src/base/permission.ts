@@ -94,4 +94,6 @@ export type ProtocolPermissionMap = ExactMatch<{
     "subscription:scene:text-edit": "scene";
     "subscription:scene:drawdy-element-selection": "scene";
     "subscription:scene:drawdy-elements-dragged": "scene";
+
+    "subscription:tool:laser": "scene";
 }>;
