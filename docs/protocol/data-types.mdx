@@ -33,7 +33,11 @@ type StrokeDash = "solid" | "dashed" | "dotted";
 type FillStyle = "solid" | "hachure" | "cross-hatch";
 type TextAlign = "left" | "center" | "right";
 
-type LineBinding = { drawdyElementId: string; anchorX: number; anchorY: number };
+type LineBinding = {
+    drawdyElementId: string;
+    anchorX: number;
+    anchorY: number;
+};
 
 type LineEndpoints = (
     | { from: [number, number] }
@@ -275,6 +279,13 @@ A declarative, purely local animation. Setting it makes the element animate; the
 ```ts
 type AnimatedProp<T> = T[];
 
+type ColorComponents = [number, number, number];
+
+type ColorAnimation = {
+    type: "rgb" | "oklch";
+    components: AnimatedProp<ColorComponents>;
+};
+
 type LocalAnimationTransform = Partial<{
     x: AnimatedProp<number>;
     y: AnimatedProp<number>;
@@ -282,13 +293,16 @@ type LocalAnimationTransform = Partial<{
     height: AnimatedProp<number>;
     rotation: AnimatedProp<number>;
     opacity: AnimatedProp<number>;
+    strokeColor: ColorAnimation;
+    textColor: ColorAnimation;
+    fillColor: ColorAnimation;
 }>;
 
 type LocalAnimation = {
     time: {
         durationMs: number;
         curve: "linear" | "ease-in-out";
-        repeat: "none" | "ping-pong";
+        repeat: "none" | "ping-pong" | "loop";
     };
     animation: {
         transform: LocalAnimationTransform;
@@ -299,6 +313,7 @@ type LocalAnimation = {
 
 - `time.durationMs` is the length of one cycle. `time.curve` eases the time progress before it samples the tracks. `time.repeat` is `"none"` (play once, then hold the final frame) or `"ping-pong"` (bounce 0 → 1 → 0 forever).
 - Each `transform` field is a **keyframe track** — an array of values sampled across the (eased) progress. `x`/`y` translate in canvas units; `width`/`height` are scale multipliers about the element's center; `rotation` is radians about its center; `opacity` multiplies its alpha. Omitted fields hold their rest value.
+- `strokeColor`/`textColor`/`fillColor` are **color tracks**. Unlike the numeric tracks they are not offsets from the rest value: the sampled color _replaces_ the element's own color for as long as the animation is attached, and the element's stored style is untouched. `components` is a keyframe list of `[r, g, b]` (each 0–255) for `"rgb"`, or `[l, c, h]` (lightness 0–1, chroma, hue in degrees) for `"oklch"`. Channels interpolate independently using `animation.curve`; an oklch hue always takes the shorter way around the wheel, so `350 → 10` passes through `0` rather than sweeping through `180`. A single keyframe holds a constant color.
 - `animation.curve` is how keyframes interpolate: `"linear"` between values, or `"catmull"` for a smooth spline through them.
 
 ## ModuleStyling

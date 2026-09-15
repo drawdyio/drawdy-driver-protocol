@@ -27,6 +27,13 @@ export type SubscribeableKey = keyof SubscribeableProperties;
 
 export type AnimatedProp<T> = T[];
 
+export type ColorComponents = [number, number, number];
+
+export type ColorAnimation = {
+    type: "rgb" | "oklch";
+    components: AnimatedProp<ColorComponents>;
+};
+
 export type LocalAnimationTransform = Partial<{
     x: AnimatedProp<number>;
     y: AnimatedProp<number>;
@@ -34,13 +41,16 @@ export type LocalAnimationTransform = Partial<{
     height: AnimatedProp<number>;
     rotation: AnimatedProp<number>;
     opacity: AnimatedProp<number>;
+    strokeColor: ColorAnimation;
+    textColor: ColorAnimation;
+    fillColor: ColorAnimation;
 }>;
 
 export type LocalAnimation = {
     time: {
         durationMs: number;
         curve: "linear" | "ease-in-out";
-        repeat: "none" | "ping-pong";
+        repeat: "none" | "ping-pong" | "loop";
     };
     animation: {
         transform: LocalAnimationTransform;
