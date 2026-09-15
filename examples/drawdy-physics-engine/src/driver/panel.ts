@@ -13,8 +13,9 @@ import {
 } from "./sandbox";
 import { PhysicsSession } from "./session";
 
-// Dashed box with a ball resting inside.
-export const ACTION_BUTTON_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="4 3"/><circle cx="12" cy="15" r="4"/></svg>`;
+// Atom: three orbits 60 degrees apart, nucleus, and an electron at each
+// orbit's far tip.
+export const ACTION_BUTTON_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="1.5"><ellipse cx="12" cy="12" rx="9.5" ry="4"/><ellipse cx="12" cy="12" rx="9.5" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="9.5" ry="4" transform="rotate(120 12 12)"/><circle cx="12" cy="12" r="2.2" fill="#f59e0b" stroke="none"/><circle cx="21.5" cy="12" r="1.5" fill="#f59e0b" stroke="none"/><circle cx="7.25" cy="3.77" r="1.5" fill="#f59e0b" stroke="none"/><circle cx="7.25" cy="20.23" r="1.5" fill="#f59e0b" stroke="none"/></svg>`;
 
 export const actionButtonId = (driverId: string): string =>
     `${driverId}:action-button`;
