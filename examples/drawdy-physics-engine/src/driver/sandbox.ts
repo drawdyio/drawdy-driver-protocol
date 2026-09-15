@@ -16,6 +16,7 @@ export const MIN_SANDBOX_H = 1200;
 export const SANDBOX_INFLATE = 0.5;
 
 const SANDBOX_STROKE = "#94a3b8";
+export const SANDBOX_LAYER = -1000;
 
 export function sandboxRect(el: SubscribedDrawdyElement): SandboxRect | null {
     if (el.x == null || el.y == null || el.width == null || el.height == null) {
@@ -138,6 +139,7 @@ async function addSandboxElement(
                         y: rect.y,
                         width: rect.w,
                         height: rect.h,
+                        layer: SANDBOX_LAYER,
                         strokeColor: style.strokeColor ?? SANDBOX_STROKE,
                         fillColor: style.fillColor ?? "transparent",
                         strokeWidth: style.strokeWidth ?? 2,
@@ -236,6 +238,26 @@ export async function renameSandbox(
         rect,
         { ...physicsMetaOf(el), name },
         el
+    );
+}
+
+export async function ensureSandboxLayer(
+    ctx: Ctx,
+    els: ReadonlyArray<SubscribedDrawdyElement>
+): Promise<void> {
+    const stale = els.filter((el) => el.layer !== SANDBOX_LAYER);
+    if (stale.length === 0) return;
+    unwrap(
+        await ctx.issueCommand({
+            type: "command:scene:update-drawdy-elements",
+            ...stamp(ctx),
+            req: {
+                updates: stale.map((el) => ({
+                    drawdyElementId: el.id,
+                    properties: { layer: SANDBOX_LAYER },
+                })),
+            },
+        })
     );
 }
 

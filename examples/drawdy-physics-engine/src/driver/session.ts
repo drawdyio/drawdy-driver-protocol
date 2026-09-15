@@ -13,6 +13,7 @@ import {
     SandboxRect,
     createSandbox,
     defaultRectAround,
+    ensureSandboxLayer,
     findSandboxes,
     isInside,
     isPointInside,
@@ -30,6 +31,7 @@ const ELEMENT_PROPERTIES: SubscribeableKey[] = [
     "y",
     "width",
     "height",
+    "layer",
 ];
 
 // Sleep thresholds. Resting-contact noise scales with GRAVITY·dt (~21 px/s
@@ -422,6 +424,8 @@ export class PhysicsSession {
                 req: { properties: ELEMENT_PROPERTIES },
             })
         );
+
+        await ensureSandboxLayer(ctx, findSandboxes(drawdyElements));
 
         const allDynamic = drawdyElements.filter(
             (el) => physicsMode(el) === "dynamic" && isDynamicEligible(el)

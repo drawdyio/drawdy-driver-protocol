@@ -1,6 +1,8 @@
 import {
     MIN_SANDBOX_H,
     MIN_SANDBOX_W,
+    SANDBOX_LAYER,
+    ensureSandboxLayer,
     defaultRectAround,
     findSandboxes,
     isInside,
@@ -120,5 +122,40 @@ describe("sandboxName", () => {
         expect(
             sandboxName({ id: "a", meta: { physics: { mode: "sandbox" } } })
         ).toBeNull();
+    });
+});
+
+describe("ensureSandboxLayer", () => {
+    const ctxWith = (calls: any[]) =>
+        ({
+            driverId: "d",
+            generateId: () => "new",
+            nextRequestId: () => "1",
+            issueCommand: (cmd: any) => {
+                calls.push(cmd);
+                return Promise.resolve({ res: { value: { updated: 1 } } });
+            },
+        }) as any;
+
+    it("re-stamps only the sandboxes that drifted off the backdrop layer", async () => {
+        const calls: any[] = [];
+        await ensureSandboxLayer(ctxWith(calls), [
+            { id: "a", layer: 0 },
+            { id: "b", layer: SANDBOX_LAYER },
+            { id: "c" },
+        ]);
+        expect(calls).toHaveLength(1);
+        expect(calls[0].req.updates).toEqual([
+            { drawdyElementId: "a", properties: { layer: SANDBOX_LAYER } },
+            { drawdyElementId: "c", properties: { layer: SANDBOX_LAYER } },
+        ]);
+    });
+
+    it("writes nothing when every sandbox is already a backdrop", async () => {
+        const calls: any[] = [];
+        await ensureSandboxLayer(ctxWith(calls), [
+            { id: "a", layer: SANDBOX_LAYER },
+        ]);
+        expect(calls).toHaveLength(0);
     });
 });
