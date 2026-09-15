@@ -12,6 +12,7 @@ export interface SubscribeableProperties extends ElementStyle {
     meta: Record<string, unknown>;
     locked: boolean;
     groupId: string;
+    frameId: string;
     x: number;
     y: number;
     width: number;
@@ -63,6 +64,7 @@ export type UpdateableProperties = ElementStyle &
         meta: Record<string, unknown>;
         locked: boolean;
         groupId: string | null;
+        frameId: string | null;
         localAnimation: LocalAnimation | null;
     }>;
 
@@ -94,4 +96,6 @@ export interface DrawdyElementCommon extends ElementStyle {
     drawdyElementId: string;
     meta?: Record<string, any>;
     groupId?: string;
+    /** Id of the frame this element belongs to. */
+    frameId?: string;
 }
