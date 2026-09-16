@@ -48,6 +48,26 @@ const AUTO_START_RETRIES_MS = [800, 2000, 4000, 8000, 15000];
 /** Scene-event bursts (drags, commits) collapse into one panel refresh. */
 const PANEL_STATE_DEBOUNCE_MS = 300;
 
+/**
+ * Permission grants can arrive after activation — the host asks on first use,
+ * and the install flow grants only once the driver is loaded — so a refused
+ * command must never reject activate(), or the install itself fails.
+ */
+const attempt = async (
+    label: string,
+    run: () => Promise<unknown>
+): Promise<boolean> => {
+    try {
+        await run();
+        return true;
+    } catch (err) {
+        console.warn(
+            `[drawdy-physics] ${label} unavailable: ${err instanceof Error ? err.message : String(err)}`
+        );
+        return false;
+    }
+};
+
 let driver: {
     ctx: Ctx;
     session: PhysicsSession;
@@ -56,6 +76,7 @@ let driver: {
     panelStateTimer: ReturnType<typeof setTimeout> | null;
     refreshChecks: () => Promise<void>;
     setSelection: (ids: string[]) => void;
+    registerMenu: () => Promise<void>;
 } | null = null;
 
 /** Refresh the panel's lists, debounced; a no-op until it was first opened. */
@@ -113,6 +134,16 @@ export const activate: DriverModule["activate"] = async ({
         }
     };
 
+    // refreshMenuChecks caches what it last rendered, so a failed attempt has
+    // to reset that cache or the retry would short-circuit as a no-op.
+    let menuRegistered = false;
+    const registerMenu = async (): Promise<void> => {
+        if (menuRegistered) return;
+        resetMenuChecks();
+        await refreshMenuChecks(ctx, { static: false, dynamic: false });
+        menuRegistered = true;
+    };
+
     driver = {
         ctx,
         session,
@@ -123,100 +154,112 @@ export const activate: DriverModule["activate"] = async ({
         setSelection: (ids) => {
             selectedIds = ids;
         },
+        registerMenu,
     };
     console.info(`[drawdy-physics] activated (${manifest.driverVersion})`);
 
     // Extension-rail panel: sandbox size + tagged-element lists.
-    unwrap(
-        await issueCommand({
-            type: "command:dom:create-action-button",
-            ...stamp(ctx),
-            req: {
-                domElementId: actionButtonId(ctx.driverId),
-                svg: ACTION_BUTTON_SVG,
-            },
-        })
-    );
-    unwrap(
-        await issueCommand({
-            type: "subscription:dom:element-clicked",
-            ...stamp(ctx),
-            req: { domElementId: actionButtonId(ctx.driverId) },
-        })
-    );
-    unwrap(
-        await issueCommand({
-            type: "subscription:webview:message",
-            ...stamp(ctx),
-            req: { webviewDomId: panelWebviewId(ctx.driverId) },
-        })
-    );
-    unwrap(
-        await issueCommand({
-            type: "subscription:dom:theme-changed",
-            ...stamp(ctx),
-        })
-    );
+    await attempt("panel button", async () => {
+        unwrap(
+            await issueCommand({
+                type: "command:dom:create-action-button",
+                ...stamp(ctx),
+                req: {
+                    domElementId: actionButtonId(ctx.driverId),
+                    svg: ACTION_BUTTON_SVG,
+                },
+            })
+        );
+        unwrap(
+            await issueCommand({
+                type: "subscription:dom:element-clicked",
+                ...stamp(ctx),
+                req: { domElementId: actionButtonId(ctx.driverId) },
+            })
+        );
+        unwrap(
+            await issueCommand({
+                type: "subscription:webview:message",
+                ...stamp(ctx),
+                req: { webviewDomId: panelWebviewId(ctx.driverId) },
+            })
+        );
+        unwrap(
+            await issueCommand({
+                type: "subscription:dom:theme-changed",
+                ...stamp(ctx),
+            })
+        );
+    });
 
     // Extension → Physics → Static / Dynamic.
     // Tagging (re)starts the simulation — there is no run button.
-    resetMenuChecks();
-    await refreshMenuChecks(ctx, { static: false, dynamic: false });
-    for (const menuId of [
-        staticMenuId(ctx.driverId),
-        dynamicMenuId(ctx.driverId),
-    ]) {
-        unwrap(
-            await issueCommand({
-                type: "subscription:context-menu:clicked",
-                ...stamp(ctx),
-                req: { menuId },
-            })
-        );
-    }
+    // Registering the menu spends the dom permission, so it is retried until
+    // the grant lands; the click subscriptions only need it to be declared.
+    await attempt("physics menu", async () => {
+        for (const menuId of [
+            staticMenuId(ctx.driverId),
+            dynamicMenuId(ctx.driverId),
+        ]) {
+            unwrap(
+                await issueCommand({
+                    type: "subscription:context-menu:clicked",
+                    ...stamp(ctx),
+                    req: { menuId },
+                })
+            );
+        }
+    });
+    await attempt("physics menu", registerMenu);
 
     // Deletions drop bodies mid-run; geometry edits rebuild them in place.
-    unwrap(
-        await issueCommand({
-            type: "subscription:scene:elements-removed",
-            ...stamp(ctx),
-            req: { properties: [] },
-        })
-    );
-    unwrap(
-        await issueCommand({
-            type: "subscription:scene:elements-updated",
-            ...stamp(ctx),
-            req: { properties: UPDATE_PROPERTIES },
-        })
-    );
-
-    for (const type of [
-        "subscription:scene:drawdy-element-selection",
-        "subscription:scene:drawdy-elements-dragged",
-    ] as const) {
-        unwrap(await issueCommand({ type, ...stamp(ctx) }));
-    }
-
-    // Auto-start when tagged content appears (paste, board load, peers).
-    for (const type of [
-        "subscription:scene:elements-added",
-        "subscription:scene:elements-replaced",
-    ] as const) {
+    await attempt("scene subscriptions", async () => {
         unwrap(
             await issueCommand({
-                type,
+                type: "subscription:scene:elements-removed",
+                ...stamp(ctx),
+                req: { properties: [] },
+            })
+        );
+        unwrap(
+            await issueCommand({
+                type: "subscription:scene:elements-updated",
                 ...stamp(ctx),
                 req: { properties: UPDATE_PROPERTIES },
             })
         );
-    }
+        for (const type of [
+            "subscription:scene:drawdy-element-selection",
+            "subscription:scene:drawdy-elements-dragged",
+        ] as const) {
+            unwrap(await issueCommand({ type, ...stamp(ctx) }));
+        }
+    });
+
+    // Auto-start when tagged content appears (paste, board load, peers).
+    await attempt("auto-start subscriptions", async () => {
+        for (const type of [
+            "subscription:scene:elements-added",
+            "subscription:scene:elements-replaced",
+        ] as const) {
+            unwrap(
+                await issueCommand({
+                    type,
+                    ...stamp(ctx),
+                    req: { properties: UPDATE_PROPERTIES },
+                })
+            );
+        }
+    });
+
     for (const delay of AUTO_START_RETRIES_MS) {
         setTimeout(() => {
             const d = driver;
-            if (!d || d.session.hasEverRun || d.session.running) return;
+            if (!d) return;
+            void attempt("physics menu", d.registerMenu);
+            if (d.session.hasEverRun || d.session.running) return;
             console.info(`[drawdy-physics] auto-start attempt at ${delay}ms`);
-            void d.session.restart();
+            void attempt("simulation", () => d.session.restart());
         }, delay);
     }
 };
