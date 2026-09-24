@@ -94,4 +94,10 @@ export type DomElementSchema =
           child: string;
           domId?: string;
           styles?: ElementSchemaStyles;
+      }
+    | {
+          type: "iframe";
+          child: { src: string } | { srcDoc: string };
+          domId?: string;
+          styles?: ElementSchemaStyles;
       };

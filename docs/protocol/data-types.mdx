@@ -134,6 +134,7 @@ type DrawdyElementSchema =
 - `elbowRouting` routes the line or arrow orthogonally between its two ends instead of straight; `bend` is ignored when it is set.
 - `text.width`/`height` are optional and can be measured later.
 - `component` embeds a live [`DomElementSchema`](#domelementschema) UI tree at `(x, y)` on the canvas — the same declarative schema used for floating elements, but committed as a scene element that pans and zooms with the board.
+- A `component` schema's root `width` or `height` given in `%` is resolved against the element's `width`/`height` when the element is created, so `[100, "%"]` on a 640 × 480 component becomes `[640, "px"]` × `[480, "px"]`. Only the root is resolved, and the resolved size does not follow later resizes.
 
 ## DomElementSchema
 
@@ -184,8 +185,17 @@ type DomElementSchema =
           child: string;
           domId?: string;
           styles?: ElementSchemaStyles;
+      }
+    | {
+          type: "iframe";
+          child: { src: string } | { srcDoc: string };
+          domId?: string;
+          styles?: ElementSchemaStyles;
       };
 ```
+
+- `image.child` is the image URL; SVG works.
+- `iframe.child` is either `{ src }`, a URL to load, or `{ srcDoc }`, an HTML string rendered in place. The iframe is sandboxed with `allow-scripts` only: pages run in an opaque origin, so they cannot reach Drawdy's DOM or storage, and pages that rely on cookies or `localStorage` may not work. A `src` site must allow framing (no `X-Frame-Options: DENY` or restrictive `frame-ancestors`).
 
 ```ts
 type FontWeight = "normal" | "medium" | "semibold" | "bold";
