@@ -21,6 +21,8 @@ export type ProtocolPermissionMap = ExactMatch<{
     "command:dom:create-floating-element": "dom";
     "command:dom:remove-floating-element": "dom";
     "command:dom:move-floating-element": "dom";
+    "command:dom:update-floating-element": "dom";
+    "command:dom:upsert-floating-element": "dom";
 
     "command:webview:create": "dom";
     "command:webview:hide": "dom";

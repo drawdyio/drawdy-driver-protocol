@@ -14,6 +14,28 @@ import { ScenePreviewCommand } from "../preview";
 import { DriverSubscription } from "../subscription";
 import { StyleableToolId, ToolStyleState } from "../tool-state";
 
+export type FloatingElementCreateRequest = {
+    domId: string;
+    /**
+     * The fixed position in the dom.
+     */
+    position: { x: number; y: number };
+    schema: DomElementSchema;
+    /**
+     * When true, clicking outside the element dismisses it — same
+     * effect as command:dom:remove-floating-element. The driver is NOT
+     * notified; poll command:dom:element-rect if you need to know.
+     * Defaults to false.
+     *
+     * I might add a notification subscription in the future.
+     */
+    barrierDismissible?: boolean;
+    /**
+     * IF true, it avoids collision like a popover
+     */
+    asPopover?: boolean;
+};
+
 /**
  * Commands set sent from driver to drawdy.
  */
@@ -141,28 +163,22 @@ export type DriverCommand =
       >
     | ProtocolCommand<
           "command:dom:create-floating-element",
+          FloatingElementCreateRequest,
+          { created: boolean }
+      >
+    | ProtocolCommand<
+          "command:dom:upsert-floating-element",
+          FloatingElementCreateRequest,
+          { created: boolean }
+      >
+    | ProtocolCommand<
+          "command:dom:update-floating-element",
           {
               domId: string;
-              /**
-               * The fixed position in the dom.
-               */
               position: { x: number; y: number };
               schema: DomElementSchema;
-              /**
-               * When true, clicking outside the element dismisses it — same
-               * effect as command:dom:remove-floating-element. The driver is NOT
-               * notified; poll command:dom:element-rect if you need to know.
-               * Defaults to false.
-               *
-               * I might add a notification subscription in the future.
-               */
-              barrierDismissible?: boolean;
-              /**
-               * IF true, it avoids collision like a popover
-               */
-              asPopover?: boolean;
           },
-          { created: boolean }
+          undefined
       >
     | ProtocolCommand<
           "command:dom:remove-floating-element",
