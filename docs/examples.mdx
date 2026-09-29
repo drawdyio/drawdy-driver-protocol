@@ -37,7 +37,7 @@ Shows drag-and-drop driven by the protocol's own [`subscription:dom:drag`](/prot
 
 ## Background Remover
 
-<Card title="drawdy-background-remover" icon="wand-magic-sparkles" href="https://github.com/drawdyio/drawdy-driver-protocol/tree/main/examples/drawdy-background-remover">
+<Card title="drawdy-background-remover" icon="wand-magic-sparkles" href="https://github.com/drawdyio/drawdy-background-remover">
   `drawdy.background-remover`: right-click a selected image and remove its background, entirely on-device.
 </Card>
 
@@ -47,7 +47,7 @@ Shows a driver doing real compute inside the sandboxed worker. Segmentation runs
 - Reading the selection: `command:scene:get-current-selected-drawdy-elements`, `command:scene:get-drawdy-elements`.
 - [Image pixels in and out](/protocol/commands#scene-images): `command:scene:get-image-source`, then `command:scene:add-drawdy-elements` with a blob-sourced `image` placed beside the original.
 - A status toast built from `command:dom:create-floating-element` / `command:dom:remove-floating-element` and `command:dom:window-size`.
-- Loading a WebAssembly runtime in the worker with `importScripts`, decoding with `createImageBitmap` + `OffscreenCanvas`, and a pure, unit-tested pre/post-processing pipeline under `src/segment.ts`: `pnpm --filter drawdy-background-remover test`.
+- Loading a WebAssembly runtime in the worker with `importScripts`, decoding with `createImageBitmap` + `OffscreenCanvas`, and a pure, unit-tested pre/post-processing pipeline under `src/segment.ts`: `pnpm test`.
 
 ## Math Symbols
 

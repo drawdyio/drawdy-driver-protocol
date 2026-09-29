@@ -1,8 +1,0 @@
-{
-    "driverId": "drawdy.background-remover",
-    "driverName": "Background Remover",
-    "driverVersion": "0.1.0",
-    "description": "Remove the background from selected images. Right-click an image and pick Fast or Best quality; segmentation runs entirely on your device and no pixels leave the browser.",
-    "main": "main.js",
-    "permissions": ["dom", "scene", "storage", "secure-storage"]
-}
