@@ -6,7 +6,12 @@ description: "What each permission grants, how a driver declares them, and when 
 Every command and subscription topic maps to one permission, or to none. A driver declares the permissions it needs in its manifest, and Drawdy asks the user to grant each one the first time a command that needs it is issued. Nothing is asked at install or in `activate`.
 
 ```ts
-type ProtocolPermission = "dom" | "scene" | "storage" | "secure-storage";
+type ProtocolPermission =
+    | "dom"
+    | "scene"
+    | "storage"
+    | "secure-storage"
+    | "collaboration";
 ```
 
 ## Declaring permissions
@@ -33,6 +38,7 @@ A command whose permission is not declared fails immediately with an [`unauthori
 | `scene` | The user's content and the tools that edit it. | Every `command:scene:*` command (elements, images, previews, text editing, screenshots, selection), every `command:tools:*` command, undo and redo, and every `subscription:scene:*` topic. |
 | `storage` | The driver's plain key/value store on this device. | `command:kv-storage:*`. |
 | `secure-storage` | The driver's encrypted store on the user's account. | `command:secure-storage:*`. |
+| `collaboration` | The names, avatars, colors and cursor positions of the people on the board, including the user running the driver. | `command:collaboration:get-all-users-in-board` and `subscription:collaboration:presence-changed`. |
 
 Reading and moving the camera, the camera-moved events, and `command:subscription:remove` need no permission and always run.
 

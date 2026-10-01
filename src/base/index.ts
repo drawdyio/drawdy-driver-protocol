@@ -1,4 +1,5 @@
 export * from "./base";
+export * from "./collaboration";
 export * from "./command";
 export * from "./context-menu";
 export * from "./css-unit";

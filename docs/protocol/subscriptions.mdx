@@ -192,6 +192,17 @@ type LaserStroke = [number, number][];
 
 `tool:laser` mirrors the laser pointer's on-canvas trail. `lasers` is the complete set of strokes currently visible — each a list of `[x, y]` canvas-space points in draw order — not a delta. It fires when a stroke is finished (pointer up) and carries every stroke of the session, including earlier ones that are still fading, then fires once more with an empty `lasers` when the whole trail has faded out or the tool is cancelled. Nothing is sent while the pointer is still down; pair it with [`subscription:scene:pointer-position`](#scene-events) if you need the live cursor.
 
+## Collaboration events
+
+The subscription in this section requires the [`collaboration`](/protocol/permissions) permission. `CollaborationUserPresence` is described in [Commands](/protocol/commands#collaboration).
+
+```ts
+"subscription:collaboration:presence-changed"
+body: { users: CollaborationUserPresence[] }
+```
+
+Each event carries the full list of users on the board, in the same form as [`command:collaboration:get-all-users-in-board`](/protocol/commands#collaboration), so the driver can replace its copy instead of applying a change. It fires when someone joins or leaves, when anyone's cursor moves (including the user running the driver), and when anyone's name, color, avatar or host status changes. It does not fire on subscribe; call `get-all-users-in-board` for the starting list.
+
 ## Camera events
 
 No permission is required for the subscriptions in this section.

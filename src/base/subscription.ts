@@ -1,4 +1,5 @@
 import { DistributiveOmit, ProtocolCommand } from "./base";
+import { CollaborationUserPresence } from "./collaboration";
 import {
     SubscribeableKey,
     SubscribedDrawdyElement,
@@ -122,7 +123,11 @@ export type DriverSubscription =
           "subscription:scene:drawdy-elements-dragged",
           undefined
       >
-    | ProtocolSubscription<"subscription:tool:laser", undefined>;
+    | ProtocolSubscription<"subscription:tool:laser", undefined>
+    | ProtocolSubscription<
+          "subscription:collaboration:presence-changed",
+          undefined
+      >;
 
 export type DriverSubscriptionEvent =
     | ProtocolSubscriptionEvent<
@@ -336,6 +341,12 @@ export type DriverSubscriptionEvent =
           {
               type: "laser-state-update";
               lasers: LaserStroke[];
+          }
+      >
+    | ProtocolSubscriptionEvent<
+          "subscription:collaboration:presence-changed",
+          {
+              users: CollaborationUserPresence[];
           }
       >;
 

@@ -417,6 +417,38 @@ The commands in this section require the [`scene`](/protocol/permissions) permis
 "command:history:redo";
 ```
 
+## Collaboration
+
+The commands in this section require the [`collaboration`](/protocol/permissions) permission.
+
+```ts
+"command:collaboration:get-all-users-in-board"
+res: { users: CollaborationUserPresence[] }
+```
+
+```ts
+type CollaborationUserInfo = {
+    id: string;
+    name: string;
+    color: string;
+    image?: string;
+    isHost: boolean;
+    isSelf: boolean;
+};
+
+type CollaborationUserPresence = CollaborationUserInfo & {
+    cursorPosition: { x: number; y: number } | null;
+};
+```
+
+`users` always has at least one entry: the user running the driver, first in the list, with `isSelf: true`. On a local board, or a cloud board nobody else has open, that is the only entry. Each other person on the board appears once, even if they have it open in several tabs.
+
+`cursorPosition` is in canvas space. It is `null` until the user has moved their pointer over the canvas.
+
+`isHost` is true for the board's owner. On a local board the user running the driver is the host.
+
+To follow changes, subscribe to [`subscription:collaboration:presence-changed`](/protocol/subscriptions#collaboration-events).
+
 ## Subscription management
 
 No permission is required for the commands in this section.
