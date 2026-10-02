@@ -449,6 +449,17 @@ type CollaborationUserPresence = CollaborationUserInfo & {
 
 To follow changes, subscribe to [`subscription:collaboration:presence-changed`](/protocol/subscriptions#collaboration-events).
 
+## Auth
+
+No permission is required for the commands in this section.
+
+```ts
+"command:auth:check-logged-in"
+res: { loggedIn: boolean }
+```
+
+`loggedIn` is true when the user running the driver is signed in to a Drawdy account, and false for a guest. Drawdy checks the session each time the command is issued, so the answer reflects a sign-in or sign-out that happened after the driver started. If the session check itself fails, the command fails with a `runtime` error.
+
 ## Subscription management
 
 No permission is required for the commands in this section.

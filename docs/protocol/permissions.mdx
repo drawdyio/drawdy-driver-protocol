@@ -40,7 +40,7 @@ A command whose permission is not declared fails immediately with an [`unauthori
 | `secure-storage` | The driver's encrypted store on the user's account. | `command:secure-storage:*`. |
 | `collaboration` | The names, avatars, colors and cursor positions of the people on the board, including the user running the driver. | `command:collaboration:get-all-users-in-board` and `subscription:collaboration:presence-changed`. |
 
-Reading and moving the camera, the camera-moved events, and `command:subscription:remove` need no permission and always run.
+Reading and moving the camera, the camera-moved events, `command:auth:check-logged-in`, and `command:subscription:remove` need no permission and always run.
 
 Each section of [Commands](/protocol/commands) and [Subscriptions](/protocol/subscriptions) names the permission its entries need.
 
