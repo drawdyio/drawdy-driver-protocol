@@ -1,3 +1,5 @@
+import type { DrawdyElementSchema } from ".";
+
 export type DrawdyElement = { id: string };
 
 export type LineBinding = {
@@ -7,8 +9,11 @@ export type LineBinding = {
 };
 
 export interface SubscribeableProperties extends ElementStyle {
-    type: string;
-    componentType: string;
+    type: DrawdyElementSchema["type"];
+    componentType?: Extract<
+        DrawdyElementSchema,
+        { type: "shape" }
+    >["componentType"];
     meta: Record<string, unknown>;
     locked: boolean;
     groupId: string;
