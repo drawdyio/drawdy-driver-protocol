@@ -102,4 +102,6 @@ export type ProtocolPermissionMap = ExactMatch<{
 
     "command:collaboration:get-all-users-in-board": "collaboration";
     "subscription:collaboration:presence-changed": "collaboration";
+
+    "command:auth:check-logged-in": "none";
 }>;

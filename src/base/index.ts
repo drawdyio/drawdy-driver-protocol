@@ -1,3 +1,4 @@
+export * from "./auth";
 export * from "./base";
 export * from "./collaboration";
 export * from "./command";

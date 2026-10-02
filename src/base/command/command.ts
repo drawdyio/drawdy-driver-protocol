@@ -1,3 +1,4 @@
+import { AuthCommand } from "../auth";
 import { DistributiveOmit, ProtocolCommand } from "../base";
 import { CollaborationCommand } from "../collaboration";
 import { ContextMenu } from "../context-menu";
@@ -476,6 +477,7 @@ export type DriverCommand =
       >
     | ScenePreviewCommand
     | CollaborationCommand
+    | AuthCommand
     | DriverSubscription;
 
 export type DriverCommandRequest = DistributiveOmit<DriverCommand, "res">;
