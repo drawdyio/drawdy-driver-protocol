@@ -1,5 +1,3 @@
-import type { DrawdyElementSchema } from ".";
-
 export type DrawdyElement = { id: string };
 
 export type LineBinding = {
@@ -8,12 +6,17 @@ export type LineBinding = {
     anchorY: number;
 };
 
+export type SceneElementType =
+    | "component"
+    | "freedraw"
+    | "frame"
+    | "image"
+    | "path"
+    | "text";
+
 export interface SubscribeableProperties extends ElementStyle {
-    type: DrawdyElementSchema["type"];
-    componentType?: Extract<
-        DrawdyElementSchema,
-        { type: "shape" }
-    >["componentType"];
+    type: SceneElementType;
+    componentType: string;
     meta: Record<string, unknown>;
     locked: boolean;
     groupId: string;

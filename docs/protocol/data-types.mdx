@@ -244,8 +244,16 @@ A **ring** or other circular shape is just a `box` with `borderRadius: [50, "%"]
 The property set you can read back from the scene and update on it. It includes every [`ElementStyle`](#drawdyelementschema) field, so a driver can read an element's look and reproduce it.
 
 ```ts
+type SceneElementType =
+    | "component"
+    | "freedraw"
+    | "frame"
+    | "image"
+    | "path"
+    | "text";
+
 interface SubscribeableProperties extends ElementStyle {
-    type: string;
+    type: SceneElementType;
     componentType: string;
     meta: Record<string, unknown>;
     locked: boolean;
@@ -267,6 +275,8 @@ type SubscribeableKey = keyof SubscribeableProperties;
 type DrawdyElement = { id: string };
 type SubscribedDrawdyElement = DrawdyElement & Partial<SubscribeableProperties>;
 ```
+
+`type` and `componentType` describe the element as it is stored in the scene, which is not the same as the [`DrawdyElementSchema`](#drawdyelementschema) `type` you create it with. A `shape`, `line` or `arrow` reads back as `type: "path"`, and `componentType` tells them apart: the shape's name (`"rect"`, `"circle"`, `"diamond"`, `"triangle"`, `"star"` and so on), `"line"`, or `"arrow"`. Components read back as `type: "component"` with the component's name as `componentType`. `componentType` is an open string because components and shapes can be added without a protocol change; when an element has no component type, `componentType` is the same as `type`.
 
 When you query or subscribe you pass a list of `SubscribeableKey`; each returned `SubscribedDrawdyElement` carries `id` plus exactly the properties you asked for. Style fields are only present when the element has them set, `groupId` only when the element belongs to a group, and `frameId` only when it belongs to a frame. `startBinding`/`endBinding` are present only on lines and arrows whose end is bound to another element — request them to discover which elements a connector links. The package is type-only, so to request every style field build the key list yourself — a `Record<keyof ElementStyle, 0>` literal checked with `satisfies` gives you a compile-time-complete list to `Object.keys`.
 
