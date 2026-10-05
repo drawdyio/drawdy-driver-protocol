@@ -118,7 +118,7 @@ res: { png: Blob }
 
 - `line` and `arrow` elements can bind either end to another element instead of a fixed point — see [`LineBinding`](/protocol/data-types#drawdyelementschema). Bindings resolve against elements already on the canvas and ones created earlier in the same `add-drawdy-elements` batch, so add the targets before the connector.
 - `add-drawdy-elements` is all or nothing on ids: if any `drawdyElementId` in the batch already exists on the canvas, nothing is added and the command fails with `bad-argument`, listing the taken ids in `body.existingIds`. The user sees an error toast.
-- When updating, `meta` is **merged** into the element's existing meta; every other property is set as given. See [`UpdateableProperties`](/protocol/data-types#element-properties).
+- When updating, `meta` is **merged** into the element's existing meta; `transform` moves the element to an absolute `x`/`y`; every other property is set as given. See [`UpdateableProperties`](/protocol/data-types#element-properties).
 - Elements that share a `groupId` form a group: the user selects, moves, resizes and rotates them as one. Set it on creation or later with `update-drawdy-elements` (`null` ungroups). Grouped elements are rejected by [`begin-preview`](#scene-preview-transforms).
 - An element's `frameId` is the frame it belongs to: it moves, resizes and is clipped with that frame. Set it on creation or later with `update-drawdy-elements` (`null` removes it from the frame). Membership is explicit — dropping a frame on top of an element does not adopt it.
 - `query-combined-rect` returns the union of the elements' bounding rects, or `null` when none of the ids exist.
