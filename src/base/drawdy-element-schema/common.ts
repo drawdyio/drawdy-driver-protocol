@@ -14,9 +14,7 @@ export type SceneElementType =
     | "path"
     | "text";
 
-export interface SubscribeableProperties extends ElementStyle {
-    type: SceneElementType;
-    componentType?: "rect" | "circle" | "diamond";
+export type SubscribeableProperties = ElementStyle & {
     meta: Record<string, unknown>;
     locked: boolean;
     groupId: string;
@@ -30,7 +28,16 @@ export interface SubscribeableProperties extends ElementStyle {
     text: string;
     startBinding: LineBinding;
     endBinding: LineBinding;
-}
+} & (
+        | {
+              type: Exclude<SceneElementType, "path">;
+              componentType?: never;
+          }
+        | {
+              type: "path";
+              componentType: "rect" | "circle" | "diamond";
+          }
+    );
 
 export type SubscribeableKey = keyof SubscribeableProperties;
 
