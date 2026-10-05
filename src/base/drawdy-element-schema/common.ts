@@ -16,7 +16,7 @@ export type SceneElementType =
 
 export interface SubscribeableProperties extends ElementStyle {
     type: SceneElementType;
-    componentType: string;
+    componentType?: "rect" | "circle" | "diamond";
     meta: Record<string, unknown>;
     locked: boolean;
     groupId: string;
