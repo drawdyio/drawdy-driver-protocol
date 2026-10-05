@@ -1,7 +1,6 @@
 import { DriverCommand } from "./command";
 
-export type ProtocolPermission =
-    "dom" | "scene" | "storage" | "secure-storage" | "collaboration";
+export type ProtocolPermission = "dom" | "scene" | "storage" | "collaboration";
 type ExactMatch<
     T extends Record<DriverCommand["type"], ProtocolPermission | "none">,
 > = T;
@@ -65,10 +64,6 @@ export type ProtocolPermissionMap = ExactMatch<{
     "command:kv-storage:set": "storage";
     "command:kv-storage:get": "storage";
     "command:kv-storage:delete": "storage";
-
-    "command:secure-storage:set": "secure-storage";
-    "command:secure-storage:get": "secure-storage";
-    "command:secure-storage:delete": "secure-storage";
 
     "command:subscription:remove": "none";
 

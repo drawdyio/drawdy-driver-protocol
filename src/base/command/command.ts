@@ -429,28 +429,6 @@ export type DriverCommand =
               deleted: boolean;
           }
       >
-    | ProtocolCommand<
-          "command:secure-storage:set",
-          {
-              key: string;
-              payload: Record<string, unknown>;
-          },
-          undefined
-      >
-    | ProtocolCommand<
-          "command:secure-storage:get",
-          { key: string },
-          {
-              got?: Record<string, unknown>;
-          }
-      >
-    | ProtocolCommand<
-          "command:secure-storage:delete",
-          { key: string },
-          {
-              deleted: boolean;
-          }
-      >
     | ProtocolCommand<"command:history:undo", undefined, undefined>
     | ProtocolCommand<"command:history:redo", undefined, undefined>
     | ProtocolCommand<

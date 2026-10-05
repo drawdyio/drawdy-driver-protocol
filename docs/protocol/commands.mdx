@@ -382,7 +382,7 @@ res: { posted: boolean }
 
 ## Storage
 
-Two key/value stores scoped to your driver. `kv-storage` is plain and requires the [`storage`](/protocol/permissions) permission; `secure-storage` is for secrets and requires the [`secure-storage`](/protocol/permissions) permission.
+A key/value store scoped to your driver. `kv-storage` requires the [`storage`](/protocol/permissions) permission.
 
 ```ts
 "command:kv-storage:set"
@@ -393,17 +393,6 @@ req: { key: string }
 res: { got?: Record<string, unknown> }
 
 "command:kv-storage:delete"
-req: { key: string }
-res: { deleted: boolean }
-
-"command:secure-storage:set"
-req: { key: string; payload: Record<string, unknown> }
-
-"command:secure-storage:get"
-req: { key: string }
-res: { got?: Record<string, unknown> }
-
-"command:secure-storage:delete"
 req: { key: string }
 res: { deleted: boolean }
 ```
