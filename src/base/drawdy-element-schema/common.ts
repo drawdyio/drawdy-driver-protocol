@@ -81,6 +81,16 @@ export type UpdateableProperties = ElementStyle &
         groupId: string | null;
         frameId: string | null;
         localAnimation: LocalAnimation | null;
+        transform: Partial<{
+            /**
+             * Absolute
+             */
+            x: number;
+            /**
+             * Absolute
+             */
+            y: number;
+        }>;
     }>;
 
 export type SubscribedDrawdyElement = DrawdyElement &
