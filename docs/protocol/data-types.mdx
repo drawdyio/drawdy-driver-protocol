@@ -252,9 +252,7 @@ type SceneElementType =
     | "path"
     | "text";
 
-interface SubscribeableProperties extends ElementStyle {
-    type: SceneElementType;
-    componentType: string;
+type SubscribeableProperties = ElementStyle & {
     meta: Record<string, unknown>;
     locked: boolean;
     groupId: string;
@@ -268,7 +266,16 @@ interface SubscribeableProperties extends ElementStyle {
     text: string;
     startBinding: LineBinding;
     endBinding: LineBinding;
-}
+} & (
+        | {
+              type: Exclude<SceneElementType, "path">;
+              componentType?: never;
+          }
+        | {
+              type: "path";
+              componentType: "rect" | "circle" | "diamond";
+          }
+    );
 
 type SubscribeableKey = keyof SubscribeableProperties;
 
@@ -276,7 +283,11 @@ type DrawdyElement = { id: string };
 type SubscribedDrawdyElement = DrawdyElement & Partial<SubscribeableProperties>;
 ```
 
-`type` and `componentType` describe the element as it is stored in the scene, which is not the same as the [`DrawdyElementSchema`](#drawdyelementschema) `type` you create it with. A `shape`, `line` or `arrow` reads back as `type: "path"`, and `componentType` tells them apart: the shape's name (`"rect"`, `"circle"`, `"diamond"`, `"triangle"`, `"star"` and so on), `"line"`, or `"arrow"`. Components read back as `type: "component"` with the component's name as `componentType`. `componentType` is an open string because components and shapes can be added without a protocol change; when an element has no component type, `componentType` is the same as `type`.
+`type` describes the element as it is stored in the scene, which is not the same as the [`DrawdyElementSchema`](#drawdyelementschema) `type` you create it with: a `shape`, `line` or `arrow` reads back as `type: "path"`.
+
+`componentType` is only reported for the three shapes you can create through the protocol: a `path` whose shape is `"rect"`, `"circle"` or `"diamond"`. For every other element it is absent, even when you request it. That includes lines, arrows, other shapes drawn in Drawdy (such as triangles or stars), and components. A `path` without `componentType` is a line, an arrow, or one of those other shapes, and the protocol does not currently say which.
+
+Because the type is a union on `type`, checking `type === "path"` narrows `componentType` to `"rect" | "circle" | "diamond"`. Every property is still optional in a `SubscribedDrawdyElement`, so request both `type` and `componentType` if you need to branch on the shape.
 
 When you query or subscribe you pass a list of `SubscribeableKey`; each returned `SubscribedDrawdyElement` carries `id` plus exactly the properties you asked for. Style fields are only present when the element has them set, `groupId` only when the element belongs to a group, and `frameId` only when it belongs to a frame. `startBinding`/`endBinding` are present only on lines and arrows whose end is bound to another element — request them to discover which elements a connector links. The package is type-only, so to request every style field build the key list yourself — a `Record<keyof ElementStyle, 0>` literal checked with `satisfies` gives you a compile-time-complete list to `Object.keys`.
 
