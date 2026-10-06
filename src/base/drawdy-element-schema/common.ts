@@ -14,6 +14,8 @@ export type SceneElementType =
     | "path"
     | "text";
 
+export type ShapeComponentType = "rect" | "circle" | "diamond" | "sticky-note";
+
 export type SubscribeableProperties = ElementStyle & {
     meta: Record<string, unknown>;
     locked: boolean;
@@ -35,7 +37,7 @@ export type SubscribeableProperties = ElementStyle & {
           }
         | {
               type: "path";
-              componentType: "rect" | "circle" | "diamond";
+              componentType: ShapeComponentType;
           }
     );
 

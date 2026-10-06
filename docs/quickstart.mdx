@@ -81,13 +81,13 @@ export const onEvent: DriverModule["onEvent"] = async (event) => {
         req: {
             elements: [
                 {
-                    type: "text",
+                    type: "shape",
+                    componentType: "sticky-note",
                     drawdyElementId: noteId,
                     x: 160 + offset,
                     y: 160 + offset,
                     text: "Hello from my extension",
-                    fontSize: 24,
-                    color: "#f59e0b",
+                    fillColor: "orange",
                 },
             ],
         },

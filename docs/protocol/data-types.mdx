@@ -85,6 +85,18 @@ type DrawdyElementSchema =
           textVerticalAlign?: "top" | "middle" | "bottom";
       })
     | (DrawdyElementCommon & {
+          type: "shape";
+          componentType: "sticky-note";
+          x: number;
+          y: number;
+          width?: number;
+          height?: number;
+          fillColor?: string;
+          text?: string;
+          fontSize?: number;
+          textAlign?: TextAlign;
+      })
+    | (DrawdyElementCommon & {
           type: "line";
           bend?: Array<[number, number]>;
           elbowRouting?: boolean;
@@ -129,6 +141,7 @@ type DrawdyElementSchema =
 ```
 
 - `shape.roughness`: `0` is crisp, higher is sketchier. `text` is a label rendered inside the shape.
+- A `shape` with `componentType: "sticky-note"` is a taped paper note, the same element the sticky note tool creates. It defaults to 200 × 193 at `(x, y)`, 16 px text aligned top-left. `fillColor` picks the paper: a palette name (`"blue"`, `"lime"`, `"orange"`, `"teal"`, `"purple"`, `"pink"`, `"neutral"`) or any `#rrggbb` hex, which gets a paper derived from it; anything else falls back to blue. The tape colour and text colour come from the paper, so `strokeColor` and `textColor` are ignored.
 - `line.bend` curves the line through one control point (quadratic) or several (through every bend, in order). `arrow.bend` curves the shaft through a single control point.
 - Each end of a line or arrow is set **either** by an explicit coordinate (`from` / `to`) **or** by a `LineBinding` (`startBinding` / `endBinding`) — the two are mutually exclusive per end, so you can pin one end and bind the other. A `LineBinding` attaches that end to `elementId` at the normalized anchor (`anchorX`, `anchorY`, each `0`–`1` across the target's bounding box); the end then follows that element as it moves. Bindings resolve against elements already on the canvas and elements created earlier in the same `add-drawdy-elements` batch.
 - `elbowRouting` routes the line or arrow orthogonally between its two ends instead of straight; `bend` is ignored when it is set.
@@ -273,9 +286,11 @@ type SubscribeableProperties = ElementStyle & {
           }
         | {
               type: "path";
-              componentType: "rect" | "circle" | "diamond";
+              componentType: ShapeComponentType;
           }
     );
+
+type ShapeComponentType = "rect" | "circle" | "diamond" | "sticky-note";
 
 type SubscribeableKey = keyof SubscribeableProperties;
 
@@ -285,9 +300,9 @@ type SubscribedDrawdyElement = DrawdyElement & Partial<SubscribeableProperties>;
 
 `type` describes the element as it is stored in the scene, which is not the same as the [`DrawdyElementSchema`](#drawdyelementschema) `type` you create it with: a `shape`, `line` or `arrow` reads back as `type: "path"`.
 
-`componentType` is only reported for the three shapes you can create through the protocol: a `path` whose shape is `"rect"`, `"circle"` or `"diamond"`. For every other element it is absent, even when you request it. That includes lines, arrows, other shapes drawn in Drawdy (such as triangles or stars), and components. A `path` without `componentType` is a line, an arrow, or one of those other shapes, and the protocol does not currently say which.
+`componentType` is only reported for the shapes you can create through the protocol: a `path` whose shape is `"rect"`, `"circle"`, `"diamond"` or `"sticky-note"`. For every other element it is absent, even when you request it. That includes lines, arrows, other shapes drawn in Drawdy (such as triangles or stars), and components. A `path` without `componentType` is a line, an arrow, or one of those other shapes, and the protocol does not currently say which.
 
-Because the type is a union on `type`, checking `type === "path"` narrows `componentType` to `"rect" | "circle" | "diamond"`. Every property is still optional in a `SubscribedDrawdyElement`, so request both `type` and `componentType` if you need to branch on the shape.
+Because the type is a union on `type`, checking `type === "path"` narrows `componentType` to `ShapeComponentType`. Every property is still optional in a `SubscribedDrawdyElement`, so request both `type` and `componentType` if you need to branch on the shape.
 
 When you query or subscribe you pass a list of `SubscribeableKey`; each returned `SubscribedDrawdyElement` carries `id` plus exactly the properties you asked for. Style fields are only present when the element has them set, `groupId` only when the element belongs to a group, and `frameId` only when it belongs to a frame. `startBinding`/`endBinding` are present only on lines and arrows whose end is bound to another element — request them to discover which elements a connector links. The package is type-only, so to request every style field build the key list yourself — a `Record<keyof ElementStyle, 0>` literal checked with `satisfies` gives you a compile-time-complete list to `Object.keys`.
 

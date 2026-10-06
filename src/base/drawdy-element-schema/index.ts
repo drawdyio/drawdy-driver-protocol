@@ -43,6 +43,26 @@ export type DrawdyElementSchema =
           textAlign?: TextAlign;
           textVerticalAlign?: "top" | "middle" | "bottom";
       })
+    | (DrawdyElementCommon & {
+          type: "shape";
+          componentType: "sticky-note";
+          x: number;
+          y: number;
+          /** Defaults to 200. */
+          width?: number;
+          /** Defaults to 193. */
+          height?: number;
+          /**
+           * Paper colour: a palette name ("blue", "lime", "orange", "teal",
+           * "purple", "pink", "neutral") or a `#rrggbb` hex. Defaults to blue.
+           */
+          fillColor?: string;
+          text?: string;
+          /** Defaults to 16. */
+          fontSize?: number;
+          /** Defaults to "left". */
+          textAlign?: TextAlign;
+      })
     | LineSchema
     | (DrawdyElementCommon & {
           type: "image";
