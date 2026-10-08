@@ -140,6 +140,7 @@ type DrawdyElementSchema =
       });
 ```
 
+- A `frame` whose `meta` has `hideFrameLabel: true` has no name chip above its top-left corner: Drawdy neither draws it nor treats it as a target for selecting or renaming the frame. Use it when your driver draws its own label for the frame.
 - `shape.roughness`: `0` is crisp, higher is sketchier. `text` is a label rendered inside the shape.
 - A `shape` with `componentType: "sticky-note"` is a taped paper note, the same element the sticky note tool creates. It defaults to 200 × 193 at `(x, y)`, 16 px text aligned top-left. `fillColor` picks the paper: a palette name (`"blue"`, `"lime"`, `"orange"`, `"teal"`, `"purple"`, `"pink"`, `"neutral"`) or any `#rrggbb` hex, which gets a paper derived from it; anything else falls back to blue. The tape colour and text colour come from the paper, so `strokeColor` and `textColor` are ignored.
 - `line.bend` curves the line through one control point (quadratic) or several (through every bend, in order). `arrow.bend` curves the shaft through a single control point.
