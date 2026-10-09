@@ -118,13 +118,14 @@ Every extension declares a `manifest.json`:
 {
     "driverId": "drawdy.my-extension",
     "driverName": "My Extension",
+    "driverVersion": "1.0.0",
     "description": "A Drawdy extension.",
     "main": "main.js",
     "permissions": ["dom", "scene"]
 }
 ```
 
-`main` is the entry bundle inside the `.drawdyx` zip. `driverId` is the stable identity Drawdy uses for install, storage, and command routing. `permissions` declares what the driver may do; the starter adds a context menu (`dom`) and draws on the canvas (`scene`). Drawdy asks the user to grant each one the first time a command needs it. See [Permissions](/protocol/permissions).
+`main` is the entry bundle inside the `.drawdyx` zip. `driverVersion` is a semver version; every update you publish needs a higher one. `driverId` is the stable identity Drawdy uses for install, storage, and command routing. `permissions` declares what the driver may do; the starter adds a context menu (`dom`) and draws on the canvas (`scene`). Drawdy asks the user to grant each one the first time a command needs it. See [Permissions](/protocol/permissions).
 
 ## 4. Run it in development
 
@@ -202,6 +203,311 @@ main.js          a single CommonJS bundle exporting `activate` and `onEvent`
 ```
 
 The bundle **must** be CommonJS with named exports — Drawdy loads it and reads its `activate` and `onEvent` exports. The starter's Rollup config emits exactly this; if you roll your own build, target `format: "cjs"` with `exports: "named"`.
+
+## 6. Prepare to submit
+
+You submit from a GitHub repository, not from the `.drawdyx` you built. Drawdy fetches your source from GitHub and builds it with its own build rules. Choose how you want to share it:
+
+|                    | [Public](#7-submit-a-public-extension)          | [Private](#8-add-a-private-extension)                   |
+| ------------------ | ----------------------------------------------- | ------------------------------------------------------- |
+| Who can install it | Anyone, from the Marketplace                    | You, plus editors of the cloud boards you install it on |
+| Review             | Reviewed by the Drawdy team before it goes live | None. Ready as soon as the checks pass                  |
+| GitHub sign-in     | Required, to prove you can push to the repo     | Not needed                                              |
+| Where it is built  | On Drawdy's servers, once per submitted commit  | In your browser, when you install it                    |
+| Updates            | You submit each new version for review          | Installed copies follow new commits on the branch       |
+
+You can do both from the **[Account → Extensions](https://drawdy.io/account/extensions)** page on drawdy.io, or through the API. If you don't see that page, submitting isn't enabled for your account yet.
+
+### Repository rules
+
+These rules apply to public and private extensions alike. The repository must be **public on GitHub**.
+
+- **`manifest.json` at the repository root.** It must be valid JSON with these fields:
+
+    | Field           | Rule                                                                                   |
+    | --------------- | -------------------------------------------------------------------------------------- |
+    | `driverId`      | Dot-namespaced lowercase, e.g. `yourname.my-extension`. At most 100 characters.        |
+    | `driverName`    | 1 to 100 characters.                                                                   |
+    | `driverVersion` | Semver `major.minor.patch`, e.g. `1.0.0`.                                              |
+    | `description`   | 1 to 500 characters. Shown on the listing.                                             |
+    | `main`          | A plain `.js` filename, e.g. `main.js`. The built bundle is written under this name.   |
+    | `permissions`   | The permissions the driver uses, from `dom`, `scene`, `storage`, `collaboration`.      |
+    | `icon`          | Optional. A relative path to a `.png`, `.webp` or `.svg` file in the repository.       |
+
+    Drawdy won't install an extension whose manifest has no `description` or `permissions`. Use an empty array if the driver needs no permission. See [Permissions](/protocol/permissions).
+
+- **An entry file** at `src/index.ts`, `src/index.tsx` or `src/index.js`. Drawdy bundles it with esbuild into one CommonJS file targeting ES2020 in the browser.
+- **No npm dependencies.** Relative imports work, but the only package you may import is `@drawdy/driver-protocol`, which is types only. Drawdy does not run `npm install`, so any other package import fails the build. Copy the code you need into your repository instead.
+- **No bundler plugins.** Your Vite or Rollup config is not used. If the starter generates a module at build time (a `virtual:` import, such as webview HTML), commit the generated file as source, e.g. `src/webview-html.ts`, and import that.
+- **Size limits.** At most 500 files and 20 MB across the whole repository, not only `src/`. The built bundle must stay under 5 MB.
+
+Optional listing files, all read from the same commit:
+
+- **Icon**: the `icon` path from the manifest, or else `icon.png`, `icon.webp` or `icon.svg` at the root. PNG, WebP or SVG, up to 256 KB. SVGs containing scripts are rejected.
+- **`README.md`** at the root, up to 200 KB. It becomes the extension's overview page. Relative links and images are rewritten to point at your repository on GitHub.
+- **`CHANGELOG.md`** at the root, up to 200 KB. It appears in the Changelog tab.
+
+<Tip>
+    Pick a `driverId` under your own name, e.g. `yourname.my-extension`. The
+    first person to submit an id owns it, and nobody else can publish under it
+    afterwards. `drawdy.` ids are for Drawdy's own extensions.
+</Tip>
+
+### Get an API token
+
+Skip this if you use the page on drawdy.io. To submit with the API, from a script or an AI agent, you need a Drawdy token. You approve it once in the browser, so the agent never needs your password.
+
+Request a device code:
+
+```bash
+curl -X POST https://api.drawdy.io/api/auth/device/code \
+  -H "content-type: application/json" \
+  -d '{"client_id":"drawdy-cli"}'
+```
+
+```json
+{
+    "device_code": "uR79SRdGF7C2…",
+    "user_code": "2RFQWS2V",
+    "verification_uri_complete": "https://drawdy.io/cli/authorize?user_code=2RFQWS2V",
+    "expires_in": 1800,
+    "interval": 5
+}
+```
+
+Open `verification_uri_complete` while signed in to Drawdy and click **Approve**. Meanwhile, poll for the token every `interval` seconds:
+
+```bash
+curl -X POST https://api.drawdy.io/api/auth/device/token \
+  -H "content-type: application/json" \
+  -d '{
+    "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+    "device_code": "uR79SRdGF7C2…",
+    "client_id": "drawdy-cli"
+  }'
+```
+
+Until you approve, it answers with the error `authorization_pending`. Keep polling, and add 5 seconds to the interval on `slow_down`. After approval it returns `{ "access_token": "…", "token_type": "Bearer", "expires_in": 2592000 }`. The token lasts 30 days. Send it on every API call in sections 7 and 8 as `Authorization: Bearer <access_token>`.
+
+The API is at `https://api.drawdy.io`. Every failed call returns `{ "error": "<message>" }`, and the message says what to fix.
+
+<Tip>
+    To let an AI agent do it, give it this page and a prompt such as: *"Submit
+    the extension in this repository to Drawdy as a public extension, using the
+    API in the Drawdy quickstart. Push first, show me the approval link, then
+    report the submission status and any build error or reviewer note."* For a
+    private extension, ask it to add the repository as a private extension
+    instead. Approve the link it shows you.
+</Tip>
+
+## 7. Submit a public extension
+
+A public extension is listed in the Marketplace, where anyone can install it. The Drawdy team reviews every version before it goes live. Your GitHub account must have push access to the repository. You can submit up to 10 times per day.
+
+### With the form
+
+<Steps>
+  <Step title="Push your code">
+    Commit and push. Drawdy only sees what is on GitHub, so uncommitted or unpushed changes are not submitted.
+  </Step>
+  <Step title="Open the submit form">
+    Go to **[Account → Extensions](https://drawdy.io/account/extensions)**, open the **Submit** tab and choose **Public**.
+
+    <Frame caption="The Submit tab, with Public selected and GitHub not connected yet.">
+      <img src="/images/submit/submit-public.png" alt="Account → Extensions, Submit tab: the requirements list, then a New submission form with Visibility set to Public and a Connect GitHub button." />
+    </Frame>
+
+  </Step>
+  <Step title="Connect GitHub">
+    Click **Connect GitHub** and approve access. Drawdy uses this only to check that your GitHub account has push access to the repository. You can submit only repositories you can push to.
+  </Step>
+  <Step title="Enter the repository">
+    Paste the repository URL, e.g. `https://github.com/you/my-extension`. Optionally enter a branch, tag or commit; leave it empty to submit the latest commit on the default branch.
+  </Step>
+  <Step title="Submit for review">
+    Click **Submit for review**. Drawdy pins the submission to that exact commit, so pushing again later does not change what is reviewed.
+
+    <Frame caption="GitHub connected, repository and branch filled in, ready to submit.">
+      <img src="/images/submit/submit-public-connected.png" alt="The New submission form with GitHub connected as @ada-okafor, Repository URL https://github.com/ada-okafor/sticky-timer, branch main, and a Submit for review button." />
+    </Frame>
+
+  </Step>
+</Steps>
+
+### With the API
+
+You need a [Drawdy token](#get-an-api-token) and a GitHub token.
+
+<Steps>
+  <Step title="Get a GitHub token">
+    Any GitHub token that can read the repository works, for example `gh auth token`, or a fine-grained personal access token limited to that repository. Drawdy uses it only to check that your GitHub account has push access to the repository, and does not store it.
+  </Step>
+  <Step title="Submit">
+    ```bash
+    curl -X POST https://api.drawdy.io/api/extensions/submissions \
+      -H "authorization: Bearer $DRAWDY_TOKEN" \
+      -H "content-type: application/json" \
+      -d '{
+        "repoUrl": "https://github.com/you/my-extension",
+        "ref": "HEAD",
+        "githubToken": "'"$GITHUB_TOKEN"'"
+      }'
+    ```
+
+    `ref` is a branch, tag or commit SHA. `HEAD` means the latest commit on the default branch. A `201` returns the submission:
+
+    ```json
+    {
+        "submission": {
+            "id": "6702c6f5e3a1b2c4d5e6f701",
+            "driverId": "you.my-extension",
+            "version": "1.0.0",
+            "status": "pending_build",
+            "repoUrl": "https://github.com/you/my-extension",
+            "commitSha": "0078657101d4aa8a3c026c5cade1369d3bfed146",
+            "createdAt": "2026-10-09T06:20:03.701Z"
+        }
+    }
+    ```
+
+  </Step>
+  <Step title="Follow the review">
+    ```bash
+    curl https://api.drawdy.io/api/extensions/submissions/extensions/you.my-extension \
+      -H "authorization: Bearer $DRAWDY_TOKEN"
+    ```
+
+    This returns `{ "submissions": [...] }`, newest first. Each one has a `status` (see [the review process](#the-review-process)), plus `buildError` when the build failed and `reviewNote` once a reviewer has decided. `GET /api/extensions/submissions` lists your latest submissions across all extensions.
+
+  </Step>
+</Steps>
+
+| Status | When                                                                                                       |
+| ------ | ---------------------------------------------------------------------------------------------------------- |
+| `400`  | The repository URL or ref is wrong, or `manifest.json` is missing or invalid. The message names the field. |
+| `401`  | The Drawdy token is missing or expired, or the GitHub token is invalid. Get a new one.                     |
+| `403`  | Your GitHub account can't push to the repository, or the `driverId` belongs to another publisher.          |
+| `409`  | `driverVersion` is not higher than the published version.                                                  |
+| `429`  | You reached the limit of 10 submissions per day.                                                           |
+
+### The review process
+
+Every public submission goes through the same steps. You follow them in **[Account → Extensions](https://drawdy.io/account/extensions) → My extensions**, where each extension expands into its submission history.
+
+<Frame caption="My extensions: Sticky Timer expanded, with v1.2.1 in review, v1.2.0 superseded and two published versions. Wireframe Kit was delisted by Drawdy.">
+  <img src="/images/submit/my-extensions.png" alt="The My extensions tab listing Sticky Timer with its submission history, each version showing a status badge, the repository and commit, and a reviewer note, and Wireframe Kit marked Delisted by Drawdy." />
+</Frame>
+
+<Steps>
+  <Step title="Building">
+    Drawdy checks the manifest, downloads your repository at the pinned commit and bundles it under the rules above.
+
+    If the build fails, the status changes to **Build failed** and the **Build error** says why, for example a disallowed import or a missing entry file. Fix it, push, and submit again.
+
+  </Step>
+  <Step title="Scan">
+    Drawdy scans the built bundle for calls that need a closer look: `eval`, `new Function`, dynamic `import()`, `fetch`, `XMLHttpRequest`, `WebSocket`, `atob` and `importScripts`. A match never fails the submission. It points the reviewer at that line. If your extension needs one of these, explain why in your README.
+  </Step>
+  <Step title="In review">
+    A member of the Drawdy team reviews the submission. They read:
+
+    - the built bundle, line by line where the scan flagged something
+    - the manifest, and whether each permission matches what the extension does
+    - the listing: name, description, icon, README and changelog
+    - the repository and commit it was built from
+
+    Keep the bundle readable: don't commit minified or obfuscated source, and declare only the permissions the extension uses.
+
+  </Step>
+  <Step title="Decision">
+    - **Approved → Published.** Drawdy publishes the build straight to the Marketplace. The listing shows **Live · v1.0.0**, and that version is pinned to the reviewed commit.
+    - **Rejected.** The **Reviewer note** says what to change. Fix it and submit again; a rejected version has not been published, so you can resubmit with the same `driverVersion`.
+
+  </Step>
+</Steps>
+
+| Status       | API `status`     | Meaning                                                                              |
+| ------------ | ---------------- | ------------------------------------------------------------------------------------ |
+| Building     | `pending_build`  | Accepted and waiting for, or in, the build.                                          |
+| Build failed | `build_failed`   | The build stopped. The build error says why.                                         |
+| In review    | `pending_review` | Built and waiting for a reviewer.                                                    |
+| Approved     | `approved`       | Approved, and being published to the Marketplace.                                    |
+| Published    | `published`      | Live in the Marketplace.                                                             |
+| Rejected     | `rejected`       | Declined. The reviewer note says what to change.                                     |
+| Superseded   | `superseded`     | You submitted the same extension again before this one finished, so it was replaced. |
+
+Submitting again while an earlier submission is still building or in review replaces the earlier one, which becomes **Superseded**. Only the newest submission is reviewed.
+
+### Publish an update
+
+Bump `driverVersion` in `manifest.json` above the published version, add an entry to `CHANGELOG.md`, push, and submit again. Every update goes through the full review. Until the new version is approved, the Marketplace keeps serving the current one.
+
+### After publishing
+
+- **Delist** an extension from **My extensions** to remove it from the Marketplace, so nobody new can install it. **List again** puts it back.
+- Users can report an extension from its Marketplace page. Drawdy reviews reports and can delist an extension. An extension delisted by Drawdy shows **Delisted by Drawdy** and can only be listed again by Drawdy; contact support if you think it was a mistake.
+- Drawdy can mark a publisher as verified. Verified publishers get a badge next to their name on every listing.
+
+## 8. Add a private extension
+
+A private extension skips the Marketplace and the review. Use it for extensions you only want on your own boards, or to try one out before submitting it publicly. No GitHub sign-in is needed, and Drawdy stores only the repository URL.
+
+### With the form
+
+<Steps>
+  <Step title="Push your code">
+    The repository must be public on GitHub and follow the same rules as a public extension.
+  </Step>
+  <Step title="Add it to your account">
+    Go to **[Account → Extensions](https://drawdy.io/account/extensions)**, open the **Submit** tab, choose **Private**, paste the repository URL and click **Add extension**. No GitHub sign-in is needed.
+
+    Drawdy checks that `manifest.json` is at the root with a `description` and `permissions`, and that an entry file exists. It stores only the repository URL.
+
+    <Frame caption="Private needs no GitHub sign-in, only the repository URL.">
+      <img src="/images/submit/submit-private.png" alt="The New submission form with Visibility set to Private, a Repository URL, an empty Branch, tag or commit field, and an Add extension button." />
+    </Frame>
+
+  </Step>
+  <Step title="Install it on a board">
+    On any of your boards, open **Extensions → Private** and install it. Your browser downloads the source from GitHub and builds it with the same rules Drawdy's servers use, then caches the build.
+  </Step>
+</Steps>
+
+### With the API
+
+You need a [Drawdy token](#get-an-api-token). No GitHub token is needed.
+
+```bash
+curl -X POST https://api.drawdy.io/api/extensions/private \
+  -H "authorization: Bearer $DRAWDY_TOKEN" \
+  -H "content-type: application/json" \
+  -d '{"repoUrl":"https://github.com/you/my-extension"}'
+```
+
+Add `"ref"` to choose a branch, tag or commit (see [which code is installed](#which-code-is-installed)). Drawdy checks that `manifest.json` is at the root with a `description` and `permissions`, and that an entry file exists. A `201` returns `{ "extension": {...} }` with its `id`, `driverId`, `name` and `version`. Then install it on a board from **Extensions → Private**.
+
+`GET /api/extensions/private` lists the private extensions on your account, and `DELETE /api/extensions/private/<id>` removes one.
+
+| Status | When                                                                                                  |
+| ------ | ----------------------------------------------------------------------------------------------------- |
+| `400`  | The repository isn't a public GitHub URL, or `manifest.json` or the entry file is missing or invalid. |
+| `401`  | The Drawdy token is missing or expired. Get a new one.                                                |
+| `409`  | You already added this repository.                                                                    |
+| `429`  | You already have 50 private extensions, or you added more than 10 in a minute.                        |
+
+### Which code is installed
+
+The optional **Branch, tag or commit** (`ref`) decides which code is installed:
+
+- **Empty or a branch**: installs the latest commit on that branch. Installed copies check for new commits at most every 6 hours and update to them, without a review.
+- **A tag or commit SHA**: stays on that code until you change it.
+
+### Things to know
+
+- **Sharing.** When you install a private extension on a cloud board you can edit, editors of that board get it too. Drawdy tells them it is a private extension from you and that it has not been reviewed. Viewers don't get it.
+- **Removing it.** Removing it from your account stops new installs. Boards where it's already installed keep their copy until it's uninstalled there.
+- **Limits.** Up to 50 private extensions per account.
+- **GitHub rate limits.** Each install or update check calls the GitHub API without signing in, which GitHub limits to 60 requests per hour per network. If you reach it, Drawdy waits and tries again later.
 
 ## Learn from the examples
 
