@@ -28,6 +28,7 @@ export type SubscribeableProperties = ElementStyle & {
     points: [number, number][];
     rotation: number;
     text: string;
+    frameName: string;
     startBinding: LineBinding;
     endBinding: LineBinding;
 } & (
@@ -83,6 +84,7 @@ export type UpdateableProperties = ElementStyle &
         groupId: string | null;
         frameId: string | null;
         localAnimation: LocalAnimation | null;
+        frameName: string;
         transform: Partial<{
             /**
              * Absolute
