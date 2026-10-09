@@ -47,7 +47,7 @@ type LineEndpoints = (
     ({ to: [number, number] } | { endBinding: LineBinding });
 ```
 
-Every `ElementStyle` field is optional and maps 1:1 onto the canvas element. Unset fields fall back to per-variant defaults (e.g. shapes get `roughness: 1` and `cornerRadius: 12`, lines and arrows get `roughness: 0`; `seed` is randomized). On `line`/`arrow`, `strokeColor` takes precedence over the variant's required `color`, and `strokeWidth` falls back to `lineStrokeWidth`. Match the user's theme by reading colors from [`ModuleStyling`](#modulestyling) (for example `styling.foreground` for connectors) instead of hardcoding them.
+Every `ElementStyle` field is optional and maps 1:1 onto the canvas element. Unset fields fall back to per-variant defaults (e.g. shapes get `roughness: 1` and `cornerRadius: 12`, lines and arrows get `roughness: 0`; `seed` is randomized). On `line`/`arrow`, `strokeColor` takes precedence over the variant's required `color`, and `strokeWidth` falls back to `lineStrokeWidth`. To match the user's theme, read colors from [`ModuleStyling`](#modulestyling), for example `styling.tokens["--dd-text-primary"]` for connectors.
 
 ```ts
 type DrawdyElementSchema =
@@ -373,11 +373,12 @@ type LocalAnimation = {
 
 ## ModuleStyling
 
-The theme handed to `activate` and re-delivered on [`subscription:dom:theme-changed`](/protocol/subscriptions#dom-events). Each field is a resolved CSS value string.
+The theme handed to `activate` and re-delivered on [`subscription:dom:theme-changed`](/protocol/subscriptions#dom-events). Each field is a resolved CSS value string for the current mode.
 
 ```ts
 type ModuleStyling = {
     theme: "dark" | "light";
+    tokens: DrawdyThemeTokens;
     background: string;
     foreground: string;
     surface: string;
@@ -397,9 +398,53 @@ type ModuleStyling = {
     radiusMd: string;
     radiusLg: string;
 };
+
+type DrawdyThemeTokens = Record<DrawdyThemeToken, string>;
 ```
 
-For example, `{ theme: "light", background: "#fff", radiusSm: "2px", ... }`.
+For example, `{ theme: "light", background: "#fff", radiusSm: "4px", tokens: { "--dd-surface-panel": "#ffffff", ... } }`.
+
+### Theme tokens
+
+`tokens` is the set of `--dd-*` design tokens that make extension UI match Drawdy. It is keyed by the CSS custom property name, so you can apply every token to a document in one loop, for example in a webview after your driver sends `tokens` to it:
+
+```ts
+for (const [name, value] of Object.entries(styling.tokens)) {
+    document.documentElement.style.setProperty(name, value);
+}
+```
+
+The tokens are a guide, not a requirement: use `var(--dd-*)` where you want your UI to match Drawdy, and use your own values where your extension needs its own look. Apply the tokens again on `theme-changed`, because color values differ between Light and Dark. Type, spacing, size and radius tokens are the same in both modes.
+
+| Group         | Tokens                                                                                                                                  | Use for                                                                                                                                                     |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Surface       | `--dd-surface-panel`, `--dd-surface-section`, `--dd-surface-elevated`, `--dd-surface-overlay`, `--dd-surface-tooltip`                   | Panel body; wells inside a panel (segmented track, slider track); menus and popovers; the scrim behind an in-panel dialog; tooltips                         |
+| Text and icon | `--dd-text-primary`, `--dd-text-secondary`, `--dd-text-tertiary`, `--dd-text-disabled`, `--dd-icon-disabled`                            | Main content; descriptions; labels, hints and metadata; disabled labels; disabled icons. Text tokens are also icon colors, except disabled                  |
+| Boundary      | `--dd-border-subtle`, `--dd-border-medium`, `--dd-border-strong`, `--dd-divider`, `--dd-divider-strong`                                 | Input, select and icon button outlines; emphasized outlines; thumbnails and unselected checkboxes; lines between items; lines between sections              |
+| Interaction   | `--dd-interaction-subtle`, `--dd-interaction-hover`, `--dd-interaction-pressed`, `--dd-interaction-active`, `--dd-interaction-disabled` | Translucent overlays on an element's own surface: resting fill of neutral controls, hover, press, selected row, disabled control body                       |
+| Focus         | `--dd-focus-ring`                                                                                                                       | Keyboard focus. Neutral gray in both modes                                                                                                                  |
+| Control       | `--dd-control-surface-subtle`, `--dd-control-surface`                                                                                   | A track with a raised item: segmented control and slider track, selected segment and slider progress                                                        |
+| Status        | `--dd-status-info`, `--dd-status-success`, `--dd-status-warning`, `--dd-status-danger`, each with a `-subtle` variant                   | Status text and icons; the `-subtle` variants are tinted backgrounds                                                                                        |
+| Accent        | `--dd-accent`, `--dd-accent-hover`, `--dd-accent-pressed`, `--dd-accent-subtle`, `--dd-accent-text`, `--dd-on-accent`                   | Primary button fill and its hover and press; selected range and tinted badge; accent used as text on a panel; text on top of `--dd-accent`                  |
+| Type          | `--dd-type-{heading,label,body,caption}-{size,line,weight}`, `--dd-font-sans`, `--dd-font-mono`                                         | See the type scale below. `--dd-font-sans` is the font Drawdy itself uses                                                                                   |
+| Spacing       | `--dd-space-2`, `-4`, `-6`, `-8`, `-12`, `-16`, `-24`                                                                                   | The number is the size in px. Panel padding 16, gap between sections 12, gap inside a section 8                                                             |
+| Size          | `--dd-control-xs` (24px), `--dd-control-sm` (30px), `--dd-control-md` (36px), `--dd-icon-sm` (16px), `--dd-icon-md` (20px)              | Text buttons and segments; icon buttons; selects, inputs and primary buttons; icons inside controls; standalone icons. Controls in one row share one height |
+| Radius        | `--dd-radius-sm` (4px), `--dd-radius-md` (6px), `--dd-radius-lg` (8px), `--dd-radius-full` (999px)                                      | Chips; text buttons and thumbnails; icon buttons, inputs, tracks and menus; handles, avatars and dots                                                       |
+
+For accent-colored text on a panel, `--dd-accent-text` has enough contrast in both modes; `--dd-accent` is meant as a fill and is hard to read as text in Light mode.
+
+Type scale:
+
+| Style     | Size / line height | Weight | Use for                                                                               |
+| --------- | ------------------ | ------ | ------------------------------------------------------------------------------------- |
+| `heading` | 14px / 20px        | 600    | Empty-state titles only                                                               |
+| `label`   | 12px / 16px        | 500    | Default for panel UI: section titles, field labels, button, select and segment labels |
+| `body`    | 12px / 18px        | 400    | Descriptions, helper text, multi-line copy                                            |
+| `caption` | 11px / 16px        | 400    | List item names and metadata, slider values, axis labels                              |
+
+Drawdy's own panels use 11 to 12px text and show hierarchy with text color (primary, secondary, tertiary) rather than size.
+
+The other `ModuleStyling` fields are deprecated. They predate `tokens` and are kept so existing drivers keep working; use `tokens` in new code. Each deprecated field names its replacement token in its type. Two values differ: `ring` is the lime focus color, while `--dd-focus-ring` is neutral gray, and `surface2` is the panel section color, while `--dd-surface-section` is one neutral step further from the panel color, so it stays visible inside a panel in Dark mode.
 
 ## ToolStyleState
 
