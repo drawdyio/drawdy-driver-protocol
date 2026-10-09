@@ -53,6 +53,7 @@ Every `ElementStyle` field is optional and maps 1:1 onto the canvas element. Uns
 type DrawdyElementSchema =
     | (DrawdyElementCommon & {
           type: "frame";
+          name?: string;
           position: [number, number];
           width: number;
           height: number;
@@ -140,7 +141,8 @@ type DrawdyElementSchema =
       });
 ```
 
-- A `frame` whose `meta` has `hideFrameLabel: true` has no name chip above its top-left corner: Drawdy neither draws it nor treats it as a target for selecting or renaming the frame. Use it when your driver draws its own label for the frame.
+- A `frame` whose `meta` has `hieFrameLabel: true` has no name chip above its top-left corner: Drawdy neither draws it nor treats it as a target for selecting or renaming the frame. Use it when your driver draws its own label for the frame.
+- `frame.name` is the label shown above the frame. Leave it out, or pass an empty string, and the frame is numbered after the frames already on the board (`Frame 1`, `Frame 2`, …).
 - `shape.roughness`: `0` is crisp, higher is sketchier. `text` is a label rendered inside the shape.
 - A `shape` with `componentType: "sticky-note"` is a taped paper note, the same element the sticky note tool creates. It defaults to 200 × 193 at `(x, y)`, 16 px text aligned top-left. `fillColor` picks the paper: a palette name (`"blue"`, `"lime"`, `"orange"`, `"teal"`, `"purple"`, `"pink"`, `"neutral"`) or any `#rrggbb` hex, which gets a paper derived from it; anything else falls back to blue. The tape colour and text colour come from the paper, so `strokeColor` and `textColor` are ignored.
 - `line.bend` curves the line through one control point (quadratic) or several (through every bend, in order). `arrow.bend` curves the shaft through a single control point.
@@ -278,6 +280,7 @@ type SubscribeableProperties = ElementStyle & {
     points: [number, number][];
     rotation: number;
     text: string;
+    frameName: string;
     startBinding: LineBinding;
     endBinding: LineBinding;
 } & (
@@ -305,7 +308,7 @@ type SubscribedDrawdyElement = DrawdyElement & Partial<SubscribeableProperties>;
 
 Because the type is a union on `type`, checking `type === "path"` narrows `componentType` to `ShapeComponentType`. Every property is still optional in a `SubscribedDrawdyElement`, so request both `type` and `componentType` if you need to branch on the shape.
 
-When you query or subscribe you pass a list of `SubscribeableKey`; each returned `SubscribedDrawdyElement` carries `id` plus exactly the properties you asked for. Style fields are only present when the element has them set, `groupId` only when the element belongs to a group, and `frameId` only when it belongs to a frame. `startBinding`/`endBinding` are present only on lines and arrows whose end is bound to another element — request them to discover which elements a connector links. The package is type-only, so to request every style field build the key list yourself — a `Record<keyof ElementStyle, 0>` literal checked with `satisfies` gives you a compile-time-complete list to `Object.keys`.
+When you query or subscribe you pass a list of `SubscribeableKey`; each returned `SubscribedDrawdyElement` carries `id` plus exactly the properties you asked for. Style fields are only present when the element has them set, `groupId` only when the element belongs to a group, and `frameId` only when it belongs to a frame. `frameName` is present only on frames; a frame with no stored name reads back as `Frame`. `startBinding`/`endBinding` are present only on lines and arrows whose end is bound to another element — request them to discover which elements a connector links. The package is type-only, so to request every style field build the key list yourself — a `Record<keyof ElementStyle, 0>` literal checked with `satisfies` gives you a compile-time-complete list to `Object.keys`.
 
 Updates are a partial patch:
 
@@ -317,11 +320,12 @@ type UpdateableProperties = ElementStyle &
         groupId: string | null;
         frameId: string | null;
         localAnimation: LocalAnimation | null;
+        frameName: string;
         transform: Partial<{ x: number; y: number }>;
     }>;
 ```
 
-`meta` merges into existing meta. Style fields are set as given, so a driver can restyle existing elements (recolor, change stroke width, switch `fillStyle`) with `command:scene:update-drawdy-elements`. `localAnimation` attaches (or, when `null`, clears) a declarative animation on the element. `groupId` joins the element to a group — any string unique within the board, or an existing group's id to join it — and `null` ungroups it. `frameId` moves the element into the frame with that id, and `null` takes it out of its frame. `transform` moves the element so the top-left of its bounding rect lands on `x`/`y`, the same values you read back as `x` and `y`; give only one to move along that axis. Only the element itself moves: a frame's children stay where they are, so move them in the same update. Values must be finite, or the command fails with `bad-argument`. To rotate or scale an element, use `localAnimation`, which transforms about the element's own center.
+`meta` merges into existing meta. Style fields are set as given, so a driver can restyle existing elements (recolor, change stroke width, switch `fillStyle`) with `command:scene:update-drawdy-elements`. `localAnimation` attaches (or, when `null`, clears) a declarative animation on the element. `groupId` joins the element to a group — any string unique within the board, or an existing group's id to join it — and `null` ungroups it. `frameId` moves the element into the frame with that id, and `null` takes it out of its frame. `frameName` renames a frame; an empty string names it `Frame`, the same as clearing the name in the editor. Setting it on anything other than a frame fails the command with `bad-argument`. `transform` moves the element so the top-left of its bounding rect lands on `x`/`y`, the same values you read back as `x` and `y`; give only one to move along that axis. Only the element itself moves: a frame's children stay where they are, so move them in the same update. Values must be finite, or the command fails with `bad-argument`. To rotate or scale an element, use `localAnimation`, which transforms about the element's own center.
 
 ## LocalAnimation
 

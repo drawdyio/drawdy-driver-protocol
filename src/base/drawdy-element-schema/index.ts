@@ -8,6 +8,7 @@ export * from "./line";
 export type DrawdyElementSchema =
     | (DrawdyElementCommon & {
           type: "frame";
+          name?: string;
           position: [number, number];
           width: number;
           height: number;
