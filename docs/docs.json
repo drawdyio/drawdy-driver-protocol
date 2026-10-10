@@ -1,7 +1,7 @@
 {
     "$schema": "https://mintlify.com/docs.json",
     "theme": "mint",
-    "name": "DDP",
+    "name": "Drawdy Driver Protocol",
     "colors": {
         "primary": "#597100",
         "light": "#bceb00",
@@ -30,8 +30,14 @@
         "codeblocks": "system"
     },
     "seo": {
-        "metatags": {
-          "og:title": "Drawdy Driver Protocol "
+        "organization": {
+            "id": "https://drawdy.io/#organization",
+            "name": "Drawdy",
+            "url": "https://drawdy.io",
+            "logo": "https://drawdy.io/landing/logo.webp",
+            "sameAs": [
+                "https://github.com/drawdyio"
+            ]
         },
         "indexing": "all"
     },
