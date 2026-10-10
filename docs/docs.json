@@ -2,6 +2,7 @@
     "$schema": "https://mintlify.com/docs.json",
     "theme": "mint",
     "name": "Drawdy Driver Protocol",
+    "description": "The Drawdy Driver Protocol (DDP) is the open API for building Drawdy extensions: JavaScript drivers that draw on the canvas and add menus and panels.",
     "colors": {
         "primary": "#597100",
         "light": "#bceb00",
@@ -77,10 +78,19 @@
     "navbar": {
         "links": [
             {
+                "label": "Extension marketplace",
+                "href": "https://drawdy.io/extensions"
+            },
+            {
                 "label": "GitHub",
                 "href": "https://github.com/drawdyio/drawdy-driver-protocol"
             }
-        ]
+        ],
+        "primary": {
+            "type": "button",
+            "label": "Open Drawdy",
+            "href": "https://drawdy.io"
+        }
     },
     "contextual": {
         "options": [
@@ -96,6 +106,7 @@
     },
     "footer": {
         "socials": {
+            "website": "https://drawdy.io",
             "github": "https://github.com/drawdyio/drawdy-driver-protocol"
         }
     },
