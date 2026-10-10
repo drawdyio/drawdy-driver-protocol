@@ -31,17 +31,9 @@
     },
     "seo": {
         "metatags": {
-            "og:site_name": "Drawdy Driver Protocol"
+          "og:title": "Drawdy Driver Protocol "
         },
-        "organization": {
-            "id": "https://drawdy.io/#organization",
-            "name": "Drawdy",
-            "url": "https://drawdy.io",
-            "logo": "https://drawdy.io/landing/logo.webp",
-            "sameAs": [
-                "https://github.com/drawdyio"
-            ]
-        }
+        "indexing": "all"
     },
     "thumbnails": {
         "fonts": {
