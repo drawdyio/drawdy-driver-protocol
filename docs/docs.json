@@ -29,6 +29,25 @@
     "styling": {
         "codeblocks": "system"
     },
+    "seo": {
+        "metatags": {
+            "og:site_name": "Drawdy Driver Protocol"
+        },
+        "organization": {
+            "id": "https://drawdy.io/#organization",
+            "name": "Drawdy",
+            "url": "https://drawdy.io",
+            "logo": "https://drawdy.io/landing/logo.webp",
+            "sameAs": [
+                "https://github.com/drawdyio"
+            ]
+        }
+    },
+    "thumbnails": {
+        "fonts": {
+            "family": "Google Sans Flex"
+        }
+    },
     "favicon": "/favicon.svg",
     "logo": {
         "light": "/logo/light.svg",

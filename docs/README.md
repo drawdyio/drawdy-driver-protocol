@@ -8,7 +8,7 @@ The [Mintlify](https://mintlify.com) site for the Drawdy Driver Protocol (DDP). 
 - `quickstart.mdx`: build, run, and package a first driver
 - `examples.mdx`: the three example drivers in `examples/` and the protocol surface each uses
 - `protocol/`: the reference, split into `overview`, `permissions`, `commands`, `subscriptions`, `webview-api`, and `data-types`
-- `docs.json`: theme, colors, navigation, navbar, redirects
+- `docs.json`: theme, colors, navigation, navbar, redirects, SEO
 - `favicon.svg`: drawdy.io's favicon, copied from `landing/public/favicon.svg` in the Drawdy repo
 - `logo/light.svg` and `logo/dark.svg`: the Drawdy elle mark (`frontend/assets/icon/logo.svg` in the Drawdy repo), 20 units tall, beside "DDP" set in Google Sans Flex SemiBold 600 at cap height 13 (Drawdy's font, `landing/app/fonts/google-sans-flex.woff2`) and converted to SVG outlines
 - `theme.css`: maps Mintlify's grey scale to Drawdy's zinc neutrals and sets DM Mono for code; everything else about the theme lives in `docs.json`
