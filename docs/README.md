@@ -49,6 +49,14 @@ Mintlify builds and hosts the site from this folder on every push to `main`.
 2. Open [Git Settings](https://app.mintlify.com/settings/deployment/git-settings), turn on **docs.json is in a subdirectory**, enter `/docs` (no trailing slash), and save. Saving starts the first deployment.
 3. Set a custom domain from the dashboard if you want one.
 
+## SEO
+
+Mintlify builds each page's `<title>`, description, canonical URL, Open Graph and Twitter tags, and share image from the page's `title` and `description` and the site `name`. A page titled "Commands" gets `Commands - Drawdy Driver Protocol`. The sitemap and `robots.txt` are generated too. So:
+
+- Give every page a `description` of about 110 to 160 characters. Search results show it as the snippet.
+- Never set `og:title`, `og:description`, `og:image`, or `canonical` in `seo.metatags` or in the dashboard's SEO settings. A site-wide value replaces every page's own, so every page gets the same title. Set them in a page's frontmatter if one page needs it.
+- `seo.organization` reuses the organization that drawdy.io publishes (`https://drawdy.io/#organization`), so search engines treat these docs as part of Drawdy. Keep its `id` in step with the landing site.
+
 ## Troubleshooting
 
 - Blank or stale preview: run `pnpm update mint`, or delete `~/.mintlify` and start `pnpm docs:dev` again.

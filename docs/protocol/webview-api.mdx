@@ -1,6 +1,6 @@
 ---
 title: "Webview API"
-description: "The `acquireDrawdyApi()` global available inside a webview document."
+description: "Use the `acquireDrawdyApi()` global inside a Drawdy webview to post messages to the driver that owns it and listen for its replies."
 ---
 
 Inside a webview document, Drawdy injects a global `acquireDrawdyApi()`. Acquire it once; messages you post reach the owning driver as [`subscription:webview:message`](/protocol/subscriptions#webview-events) events.
