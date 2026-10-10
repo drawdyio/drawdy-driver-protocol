@@ -321,11 +321,21 @@ type UpdateableProperties = ElementStyle &
         frameId: string | null;
         localAnimation: LocalAnimation | null;
         frameName: string;
+        width: number;
+        height: number;
         transform: Partial<{ x: number; y: number }>;
     }>;
 ```
 
-`meta` merges into existing meta. Style fields are set as given, so a driver can restyle existing elements (recolor, change stroke width, switch `fillStyle`) with `command:scene:update-drawdy-elements`. `localAnimation` attaches (or, when `null`, clears) a declarative animation on the element. `groupId` joins the element to a group — any string unique within the board, or an existing group's id to join it — and `null` ungroups it. `frameId` moves the element into the frame with that id, and `null` takes it out of its frame. `frameName` renames a frame; an empty string names it `Frame`, the same as clearing the name in the editor. Setting it on anything other than a frame fails the command with `bad-argument`. `transform` moves the element so the top-left of its bounding rect lands on `x`/`y`, the same values you read back as `x` and `y`; give only one to move along that axis. Only the element itself moves: a frame's children stay where they are, so move them in the same update. Values must be finite, or the command fails with `bad-argument`. To rotate or scale an element, use `localAnimation`, which transforms about the element's own center.
+`meta` merges into existing meta. Style fields are set as given, so a driver can restyle existing elements (recolor, change stroke width, switch `fillStyle`) with `command:scene:update-drawdy-elements`. `localAnimation` attaches (or, when `null`, clears) a declarative animation on the element. `groupId` joins the element to a group — any string unique within the board, or an existing group's id to join it — and `null` ungroups it. `frameId` moves the element into the frame with that id, and `null` takes it out of its frame. `frameName` renames a frame; an empty string names it `Frame`, the same as clearing the name in the editor. Setting it on anything other than a frame fails the command with `bad-argument`. `transform` moves the element so the top-left of its bounding rect lands on `x`/`y`, the same values you read back as `x` and `y`; give only one to move along that axis. Only the element itself moves: a frame's children stay where they are, so move them in the same update. Values must be finite, or the command fails with `bad-argument`.
+
+`width` and `height` resize the element so its bounding rect reads back with that size. The top-left stays where it is, or moves to `transform`'s `x`/`y` when you send both in the same update. Give only one to resize along that axis. How the element changes depends on its type:
+
+- **Shapes, lines, arrows, freedraw and frames** are stretched to fit. A freedraw's stroke width is not scaled; it is included in the size you read back.
+- **Images and components** change their scale, so their content is stretched, not reflowed.
+- **Text** sets its wrap width, so the text reflows and its height changes with the number of lines. `height` sets the height of the text box; a value smaller than the text needs has no effect.
+
+A frame's children are not resized with it. Values must be finite and greater than `0`. An axis with no size, such as the height of a horizontal line, cannot be resized. Both cases fail the command with `bad-argument`. To rotate an element, use `localAnimation`, which transforms about the element's own center.
 
 ## LocalAnimation
 

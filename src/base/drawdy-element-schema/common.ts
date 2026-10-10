@@ -85,6 +85,8 @@ export type UpdateableProperties = ElementStyle &
         frameId: string | null;
         localAnimation: LocalAnimation | null;
         frameName: string;
+        width: number;
+        height: number;
         transform: Partial<{
             /**
              * Absolute
