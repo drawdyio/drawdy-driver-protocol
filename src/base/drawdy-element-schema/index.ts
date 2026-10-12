@@ -71,6 +71,7 @@ export type DrawdyElementSchema =
           y: number;
           width: number;
           height: number;
+          isEditable?: boolean;
       } & ({ url: string; blob?: never } | { url?: never; blob: Blob }))
     | (DrawdyElementCommon & {
           type: "text";

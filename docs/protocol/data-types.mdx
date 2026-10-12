@@ -119,6 +119,7 @@ type DrawdyElementSchema =
           y: number;
           width: number;
           height: number;
+          isEditable?: boolean;
       } & ({ url: string } | { blob: Blob }))
     | (DrawdyElementCommon & {
           type: "text";
@@ -148,6 +149,7 @@ type DrawdyElementSchema =
 - `line.bend` curves the line through one control point (quadratic) or several (through every bend, in order). `arrow.bend` curves the shaft through a single control point.
 - Each end of a line or arrow is set **either** by an explicit coordinate (`from` / `to`) **or** by a `LineBinding` (`startBinding` / `endBinding`) — the two are mutually exclusive per end, so you can pin one end and bind the other. A `LineBinding` attaches that end to `elementId` at the normalized anchor (`anchorX`, `anchorY`, each `0`–`1` across the target's bounding box); the end then follows that element as it moves. Bindings resolve against elements already on the canvas and elements created earlier in the same `add-drawdy-elements` batch.
 - `elbowRouting` routes the line or arrow orthogonally between its two ends instead of straight; `bend` is ignored when it is set.
+- `image.isEditable: false` locks the image's content: the image toolbar (replace, crop, download) is hidden and crop mode can't be entered by double-click, Enter or ⌘/Ctrl-dragging a handle. The image can still be moved, resized and deleted. It defaults to `true` and can only be set when the image is added.
 - `text.width`/`height` are optional and can be measured later.
 - `component` embeds a live [`DomElementSchema`](#domelementschema) UI tree at `(x, y)` on the canvas — the same declarative schema used for floating elements, but committed as a scene element that pans and zooms with the board.
 - A `component` schema's root `width` or `height` given in `%` is resolved against the element's `width`/`height` when the element is created, so `[100, "%"]` on a 640 × 480 component becomes `[640, "px"]` × `[480, "px"]`. Only the root is resolved, and the resolved size does not follow later resizes.
