@@ -225,15 +225,15 @@ These rules apply to public and private extensions alike. The repository must be
 
 - **`manifest.json` at the repository root.** It must be valid JSON with these fields:
 
-    | Field           | Rule                                                                                   |
-    | --------------- | -------------------------------------------------------------------------------------- |
-    | `driverId`      | Dot-namespaced lowercase, e.g. `yourname.my-extension`. At most 100 characters.        |
-    | `driverName`    | 1 to 100 characters.                                                                   |
-    | `driverVersion` | Semver `major.minor.patch`, e.g. `1.0.0`.                                              |
-    | `description`   | 1 to 500 characters. Shown on the listing.                                             |
-    | `main`          | A plain `.js` filename, e.g. `main.js`. The built bundle is written under this name.   |
-    | `permissions`   | The permissions the driver uses, from `dom`, `scene`, `storage`, `collaboration`.      |
-    | `icon`          | Optional. A relative path to a `.png`, `.webp` or `.svg` file in the repository.       |
+    | Field           | Rule                                                                                 |
+    | --------------- | ------------------------------------------------------------------------------------ |
+    | `driverId`      | Dot-namespaced lowercase, e.g. `yourname.my-extension`. At most 100 characters.      |
+    | `driverName`    | 1 to 100 characters.                                                                 |
+    | `driverVersion` | Semver `major.minor.patch`, e.g. `1.0.0`.                                            |
+    | `description`   | 1 to 500 characters. Shown on the listing.                                           |
+    | `main`          | A plain `.js` filename, e.g. `main.js`. The built bundle is written under this name. |
+    | `permissions`   | The permissions the driver uses, from `dom`, `scene`, `storage`, `collaboration`.    |
+    | `icon`          | Optional. A relative path to a `.png`, `.webp` or `.svg` file in the repository.     |
 
     Drawdy won't install an extension whose manifest has no `description` or `permissions`. Use an empty array if the driver needs no permission. See [Permissions](/protocol/permissions).
 
@@ -396,7 +396,10 @@ You need a [Drawdy token](#get-an-api-token) and a GitHub token.
 Every public submission goes through the same steps. You follow them in **[Account → Extensions](https://drawdy.io/account/extensions) → My extensions**, where each extension expands into its submission history.
 
 <Frame caption="My extensions: Sticky Timer expanded, with v1.2.1 in review, v1.2.0 superseded and two published versions. Wireframe Kit was delisted by Drawdy.">
-  <img src="/images/submit/my-extensions.png" alt="The My extensions tab listing Sticky Timer with its submission history, each version showing a status badge, the repository and commit, and a reviewer note, and Wireframe Kit marked Delisted by Drawdy." />
+    <img
+        src="/images/submit/my-extensions.png"
+        alt="The My extensions tab listing Sticky Timer with its submission history, each version showing a status badge, the repository and commit, and a reviewer note, and Wireframe Kit marked Delisted by Drawdy."
+    />
 </Frame>
 
 <Steps>
@@ -407,7 +410,7 @@ Every public submission goes through the same steps. You follow them in **[Accou
 
   </Step>
   <Step title="Scan">
-    Drawdy scans the built bundle for calls that need a closer look: `eval`, `new Function`, dynamic `import()`, `fetch`, `XMLHttpRequest`, `WebSocket`, `atob` and `importScripts`. A match never fails the submission. It points the reviewer at that line. If your extension needs one of these, explain why in your README.
+    Drawdy scans the built bundle for calls that need a closer look. A match never fails the submission. It points the reviewer at that line.
   </Step>
   <Step title="In review">
     A member of the Drawdy team reviews the submission. They read:
