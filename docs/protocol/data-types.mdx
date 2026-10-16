@@ -213,7 +213,7 @@ type DomElementSchema =
 ```
 
 - `image.child` is the image URL; SVG works.
-- `iframe.child` is either `{ src }`, a URL to load, or `{ srcDoc }`, an HTML string rendered in place. The iframe is sandboxed with `allow-scripts` only: pages run in an opaque origin, so they cannot reach Drawdy's DOM or storage, and pages that rely on cookies or `localStorage` may not work. A `src` site must allow framing (no `X-Frame-Options: DENY` or restrictive `frame-ancestors`).
+- `iframe.child` is either `{ src }`, a URL to load, or `{ srcDoc }`, an HTML string rendered in place. The iframe is sandboxed with `allow-scripts` and `allow-pointer-lock` only: pages run in an opaque origin, so they cannot reach Drawdy's DOM or storage, and pages that rely on cookies or `localStorage` may not work. A page can call `requestPointerLock()` from a click inside it, for mouse look in games and 3D views; Escape always releases it. A `src` site must allow framing (no `X-Frame-Options: DENY` or restrictive `frame-ancestors`).
 
 ```ts
 type FontWeight = "normal" | "medium" | "semibold" | "bold";
