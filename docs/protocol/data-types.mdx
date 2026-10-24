@@ -208,15 +208,14 @@ type DomElementSchema =
           type: "iframe";
           child: { src: string } | { srcDoc: string };
           domId?: string;
-          pointerLock?: boolean;
           label?: string;
           styles?: ElementSchemaStyles;
       };
 ```
 
 - `image.child` is the image URL; SVG works.
-- `iframe.child` is either `{ src }`, a URL to load, or `{ srcDoc }`, an HTML string rendered in place. The iframe is sandboxed with `allow-scripts` only: pages run in an opaque origin, so they cannot reach Drawdy's DOM or storage, and pages that rely on cookies or `localStorage` may not work. A `src` site must allow framing (no `X-Frame-Options: DENY` or restrictive `frame-ancestors`).
-- `iframe.pointerLock: true` is for mouse look in games and 3D views. The sandbox then also allows pointer lock, so the page can call `requestPointerLock()` from a click inside it; Escape always releases it. Drawdy draws a 28 px drag bar at the top of the iframe, showing `label`, because the board can't drag an element through an iframe that takes the pointer; the page gets the iframe's height minus the bar. `label` also names the iframe for screen readers.
+- `iframe.child` is either `{ src }`, a URL to load, or `{ srcDoc }`, an HTML string rendered in place. The iframe is sandboxed with `allow-scripts` and `allow-pointer-lock`: pages run in an opaque origin, so they cannot reach Drawdy's DOM or storage, and pages that rely on cookies or `localStorage` may not work. A `src` site must allow framing (no `X-Frame-Options: DENY` or restrictive `frame-ancestors`).
+- On the board, Drawdy draws a 28 px drag bar at the top of every iframe, showing `label`, because the board can't drag an element through an iframe that takes the pointer; the page gets the iframe's height minus the bar, so add 28 px to the element's height. Floating elements get no bar. The page can call `requestPointerLock()` from a click inside it for mouse look in games and 3D views; Escape always releases it. `label` also names the iframe for screen readers.
 
 ```ts
 type FontWeight = "normal" | "medium" | "semibold" | "bold";

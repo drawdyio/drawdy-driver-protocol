@@ -99,9 +99,7 @@ export type DomElementSchema =
           type: "iframe";
           child: { src: string } | { srcDoc: string };
           domId?: string;
-          /** Lets the page lock the pointer; Drawdy then draws a drag bar at the top of the iframe. */
-          pointerLock?: boolean;
-          /** Shown in the drag bar and used as the iframe's title. */
+          /** Shown in the drag bar Drawdy draws at the top of every board iframe, and used as the iframe's title. */
           label?: string;
           styles?: ElementSchemaStyles;
       };
