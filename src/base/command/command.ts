@@ -429,6 +429,39 @@ export type DriverCommand =
               deleted: boolean;
           }
       >
+    /**
+     * Drawdy runs the camera, not the driver: webviews have an opaque origin,
+     * where browsers refuse getUserMedia. Preview frames go straight to the
+     * named webview as DrawdyWebcamMessage. One stream per driver; Drawdy
+     * stops it when that webview closes or hides.
+     */
+    | ProtocolCommand<
+          "command:webcam:start",
+          {
+              webviewDomId: string;
+              /** Width of the preview frames, 160 to 1280. Defaults to 640. */
+              previewWidth?: number;
+              /** Defaults to "user". */
+              facingMode?: "user" | "environment";
+          },
+          {
+              streamId: string;
+              /** The camera's full resolution, what capture returns. */
+              width: number;
+              height: number;
+          }
+      >
+    /** A PNG of the current frame at full resolution, never mirrored. */
+    | ProtocolCommand<
+          "command:webcam:capture",
+          { streamId: string },
+          { blob: Blob; width: number; height: number }
+      >
+    | ProtocolCommand<
+          "command:webcam:stop",
+          { streamId: string },
+          { stopped: boolean }
+      >
     | ProtocolCommand<"command:history:undo", undefined, undefined>
     | ProtocolCommand<"command:history:redo", undefined, undefined>
     | ProtocolCommand<

@@ -398,6 +398,34 @@ req: { key: string }
 res: { deleted: boolean }
 ```
 
+## Webcam
+
+Photos from the user's camera. These commands require the [`webcam`](/protocol/permissions) permission, which Drawdy asks for on the first `start`.
+
+```ts
+"command:webcam:start"
+req: {
+    webviewDomId: string;
+    previewWidth?: number; // 160 to 1280, defaults to 640
+    facingMode?: "user" | "environment"; // defaults to "user"
+}
+res: { streamId: string; width: number; height: number }
+
+"command:webcam:capture"
+req: { streamId: string }
+res: { blob: Blob; width: number; height: number }
+
+"command:webcam:stop"
+req: { streamId: string }
+res: { stopped: boolean }
+```
+
+- Drawdy runs the camera, not the driver or its webview: webviews have an opaque origin, where browsers refuse `getUserMedia`. The browser asks for its own camera permission the first time, and shows its camera indicator while a stream runs.
+- `start` streams preview frames straight to the webview `webviewDomId` as [`drawdy:webcam-frame`](/protocol/webview-api#webcam-frames) messages, without passing through the driver. The webview must be showing; otherwise `start` fails with `bad-argument`. `width` and `height` are the camera's full resolution.
+- A driver has at most one stream at a time; a second `start` fails with `bad-argument`. `start` fails with `unauthorized` when the user or the browser blocks the camera, and with `not-found` when there is no camera.
+- `capture` returns the current frame as a PNG at full resolution, never mirrored. An unknown `streamId` fails with `not-found`.
+- Drawdy stops the stream when its webview closes or hides, when the camera ends on its own, and when the driver unloads. In the first two cases the webview gets `drawdy:webcam-ended` if it is still there. `stop` returns false when the stream no longer exists.
+
 ## History
 
 The commands in this section require the [`scene`](/protocol/permissions) permission.
