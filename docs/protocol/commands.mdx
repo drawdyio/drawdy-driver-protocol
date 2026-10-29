@@ -422,9 +422,9 @@ res: { stopped: boolean }
 
 - Drawdy runs the camera, not the driver or its webview: webviews have an opaque origin, where browsers refuse `getUserMedia`. The browser asks for its own camera permission the first time, and shows its camera indicator while a stream runs.
 - `start` streams preview frames straight to the webview `webviewDomId` as [`drawdy:webcam-frame`](/protocol/webview-api#webcam-frames) messages, without passing through the driver. The webview must be showing; otherwise `start` fails with `bad-argument`. `width` and `height` are the camera's full resolution.
-- A driver has at most one stream at a time; a second `start` fails with `bad-argument`. `start` fails with `unauthorized` when the user or the browser blocks the camera, and with `not-found` when there is no camera.
+- One stream runs on the board at a time, so each frame exists once: webviews can't share memory, so two streams would mean two copies of every frame. A `start` from another driver ends the current stream and takes the camera; a second `start` from the same driver fails with `bad-argument`, and of two drivers starting at once, the earlier one fails with `runtime`. `start` fails with `unauthorized` when the user or the browser blocks the camera, and with `not-found` when there is no camera.
 - `capture` returns the current frame as a PNG at full resolution, never mirrored. An unknown `streamId` fails with `not-found`.
-- Drawdy stops the stream when its webview closes or hides, when the camera ends on its own, and when the driver unloads. In the first two cases the webview gets `drawdy:webcam-ended` if it is still there. `stop` returns false when the stream no longer exists.
+- Drawdy stops the stream when its webview closes or hides, when the camera ends on its own, when another driver starts the camera, and when the driver unloads. In the first three cases the webview gets `drawdy:webcam-ended` if it is still there. `stop` returns false when the stream no longer exists.
 
 ## History
 
