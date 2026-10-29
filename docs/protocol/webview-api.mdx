@@ -14,3 +14,16 @@ type DrawdyWebviewApi = {
 
 - **`postMessage`** sends a driver-defined message. It is buffered until the host connects, so it is safe to call immediately. Large payloads (`ArrayBuffer`, `ImageBitmap`, …) referenced inside `message` can be listed in `transfer` to move rather than copy them; they are re-transferred at every relay hop.
 - **`onMessage`** listens for messages the driver sends via [`command:webview:post-message`](/protocol/commands#webviews). It returns a dispose function.
+
+## Webcam frames
+
+After the driver calls [`command:webcam:start`](/protocol/commands#webcam) for this webview, Drawdy posts the camera's preview frames to it directly. They arrive through `onMessage` alongside the driver's messages:
+
+```ts
+type DrawdyWebcamMessage =
+    | { type: "drawdy:webcam-frame"; streamId: string; frame: ImageBitmap }
+    | { type: "drawdy:webcam-ended"; streamId: string };
+```
+
+- `frame` is `previewWidth` wide at the camera's aspect ratio and never mirrored. It is transferred, not copied, so call `frame.close()` once it is drawn. Frames come at the camera's rate, up to 30 per second; draw only the latest one per animation frame.
+- `drawdy:webcam-ended` means Drawdy stopped the stream without the driver asking: the webview was hidden, another extension started the camera, or the camera stopped on its own, for example when it was unplugged. Ask the driver to `start` again.

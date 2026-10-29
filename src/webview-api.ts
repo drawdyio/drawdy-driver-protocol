@@ -15,7 +15,24 @@ export type DrawdyWebviewApi = {
     postMessage(message: unknown, transfer?: Transferable[]): void;
     /**
      * Listen for messages the owning driver sends via
-     * command:webview:post-message. Returns a dispose function.
+     * command:webview:post-message, and for DrawdyWebcamMessage from a
+     * stream the driver started for this webview. Returns a dispose function.
      */
     onMessage(listener: (message: unknown) => void): () => void;
 };
+
+export type DrawdyWebcamMessage =
+    | {
+          type: "drawdy:webcam-frame";
+          streamId: string;
+          /**
+           * previewWidth wide at the camera's aspect ratio, never mirrored.
+           * Transferred to the webview, so close() it once drawn.
+           */
+          frame: ImageBitmap;
+      }
+    | {
+          /** Drawdy stopped the stream: the webview hid, or the camera ended. */
+          type: "drawdy:webcam-ended";
+          streamId: string;
+      };
