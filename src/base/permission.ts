@@ -1,6 +1,11 @@
 import { DriverCommand } from "./command";
 
-export type ProtocolPermission = "dom" | "scene" | "storage" | "collaboration";
+export type ProtocolPermission =
+    | "dom"
+    | "scene"
+    | "storage"
+    | "collaboration"
+    | "filter";
 type ExactMatch<
     T extends Record<DriverCommand["type"], ProtocolPermission | "none">,
 > = T;
@@ -99,4 +104,8 @@ export type ProtocolPermissionMap = ExactMatch<{
     "subscription:collaboration:presence-changed": "collaboration";
 
     "command:auth:check-logged-in": "none";
+
+    "command:filter:scene": "filter";
+    "command:filter:clear": "filter";
+    "command:filter:is-supported": "none";
 }>;

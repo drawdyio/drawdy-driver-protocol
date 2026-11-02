@@ -450,6 +450,68 @@ res: { loggedIn: boolean }
 
 `loggedIn` is true when the user running the driver is signed in to a Drawdy account, and false for a guest. Drawdy checks the session each time the command is issued, so the answer reflects a sign-in or sign-out that happened after the driver started. If the session check itself fails, the command fails with a `runtime` error.
 
+## Filters
+
+The commands in this section require the [`filter`](/protocol/permissions) permission, except `command:filter:is-supported`, which needs none.
+
+A filter is a fragment shader that Drawdy runs over the board canvas every frame: shapes, widgets, and anything drawn on the board. Drawdy's toolbars, menus and panels are not filtered. Filters only work in browsers with HTML-in-Canvas (Chrome 157 and later). Elsewhere every filter command fails with `unsupported`.
+
+```ts
+"command:filter:is-supported"
+res: { supported: boolean }
+```
+
+Check this before showing filter controls. It never prompts and never shows an error.
+
+```ts
+"command:filter:scene"
+req: { fragmentShader: string }
+```
+
+The board holds one filter. A second driver applying while another holds it fails with `conflict`. The same driver applying again replaces its shader.
+
+The shader is GLSL ES 3.00 and must start with `#version 300 es`. Drawdy supplies these inputs:
+
+```glsl
+in vec2 v_uv;                     // 0..1 across the board canvas, origin top left
+uniform sampler2D u_scene;        // the board canvas as it looks this frame
+uniform float u_time;             // seconds since this driver first applied a filter
+uniform vec2 u_mouse;             // pointer position in v_uv space, starts at (0.5, 0.5)
+uniform vec2 u_resolution;        // board canvas size in device pixels
+uniform vec2 u_camera;            // canvas-space point at the top left of the board canvas
+uniform float u_zoom;             // device pixels per canvas unit
+uniform vec2 u_camera_velocity;   // camera movement in canvas units per second, smoothed
+uniform float u_zoom_velocity;    // change in ln(zoom) per second, smoothed; positive while zooming in
+```
+
+The canvas-space point under a fragment is `u_camera + v_uv * u_resolution / u_zoom`, which lets a pattern stay fixed to the board while the user pans and zooms. Content moves across the screen at `-u_camera_velocity * u_zoom / u_resolution` in `v_uv` units per second, which is the direction to smear for motion blur. Both velocities fall back to zero within a fraction of a second once the camera stops.
+
+Declare one `out vec4` for the color. A minimal pass-through:
+
+```glsl
+#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_scene;
+out vec4 outColor;
+void main() {
+    outColor = texture(u_scene, v_uv);
+}
+```
+
+A shader that fails to compile or link fails with `bad-argument`, and `error.body.log` holds the compiler output. The previous filter, if any, keeps running. A shader that makes the browser lose its WebGL context is removed, and the board goes back to unfiltered. If the browser can't draw the board through HTML-in-Canvas at all, Drawdy stops wrapping it and filter commands fail with `unsupported`.
+
+Clicks still land where content is laid out, not where the shader draws it. A shader that moves pixels moves them away from where they react to the pointer.
+
+While any loaded driver declares `filter`, the board canvas is drawn through HTML-in-Canvas even with no filter applied. Cross-origin content on the board, which includes every extension canvas component, is drawn blank during that time.
+
+```ts
+"command:filter:clear"
+res: { cleared: boolean }
+```
+
+`cleared` is false when this driver had no filter applied. Removing or reloading the driver clears its filter.
+
 ## Subscription management
 
 No permission is required for the commands in this section.

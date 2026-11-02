@@ -6,7 +6,12 @@ description: "What each permission grants, how a driver declares them, and when 
 Every command and subscription topic maps to one permission, or to none. A driver declares the permissions it needs in its manifest, and Drawdy asks the user to grant each one the first time a command that needs it is issued. Nothing is asked at install or in `activate`.
 
 ```ts
-type ProtocolPermission = "dom" | "scene" | "storage" | "collaboration";
+type ProtocolPermission =
+    | "dom"
+    | "scene"
+    | "storage"
+    | "collaboration"
+    | "filter";
 ```
 
 ## Declaring permissions
@@ -33,8 +38,9 @@ A command whose permission is not declared fails immediately with an [`unauthori
 | `scene`         | The user's content and the tools that edit it.                                                                     | Every `command:scene:*` command (elements, images, previews, text editing, screenshots, selection), every `command:tools:*` command, undo and redo, and every `subscription:scene:*` topic. |
 | `storage`       | The driver's plain key/value store on this device.                                                                 | `command:kv-storage:*`.                                                                                                                                                                     |
 | `collaboration` | The names, avatars, colors and cursor positions of the people on the board, including the user running the driver. | `command:collaboration:get-all-users-in-board` and `subscription:collaboration:presence-changed`.                                                                                           |
+| `filter`        | Running a fragment shader over the board canvas.                                                                   | `command:filter:scene` and `command:filter:clear`. Declaring it makes Drawdy draw the board canvas through HTML-in-Canvas while the driver is loaded.                                      |
 
-Reading and moving the camera, the camera-moved events, `command:auth:check-logged-in`, and `command:subscription:remove` need no permission and always run.
+Reading and moving the camera, the camera-moved events, `command:auth:check-logged-in`, `command:filter:is-supported`, and `command:subscription:remove` need no permission and always run.
 
 Each section of [Commands](/protocol/commands) and [Subscriptions](/protocol/subscriptions) names the permission its entries need.
 

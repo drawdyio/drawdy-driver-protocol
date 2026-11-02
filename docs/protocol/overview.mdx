@@ -53,7 +53,9 @@ type ProtocolCommandError =
     | ProtocolError<"runtime"> // an unexpected drawdy-side failure (HTTP 500)
     | ProtocolError<"bad-argument"> // the request was malformed (HTTP 400)
     | ProtocolError<"not-found"> // a referenced element/resource is missing (HTTP 404)
-    | ProtocolError<"unauthorized">; // permission was not granted (HTTP 401)
+    | ProtocolError<"unauthorized"> // permission was not granted (HTTP 401)
+    | ProtocolError<"unsupported"> // the browser lacks a feature the command needs (HTTP 501)
+    | ProtocolError<"conflict">; // another driver holds what the command asks for (HTTP 409)
 ```
 
 Branch on `error.type` to react (e.g. degrade gracefully on `"unauthorized"`, which means the command's [permission](/protocol/permissions) was not granted); read `error.message` for display and `error.body` for the specifics (`not-found` carries the missing id, for instance).

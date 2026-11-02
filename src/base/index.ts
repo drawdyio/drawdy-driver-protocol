@@ -6,6 +6,7 @@ export * from "./context-menu";
 export * from "./css-unit";
 export * from "./dom-element-schema";
 export * from "./drawdy-element-schema";
+export * from "./filter";
 export * from "./permission";
 export * from "./preview";
 export * from "./styling";

@@ -3,6 +3,7 @@ import { DistributiveOmit, ProtocolCommand } from "../base";
 import { CollaborationCommand } from "../collaboration";
 import { ContextMenu } from "../context-menu";
 import { DomElementSchema } from "../dom-element-schema";
+import { FilterCommand } from "../filter";
 import {
     DrawdyElementSchema,
     DrawdyPreviewElementSchema,
@@ -456,6 +457,7 @@ export type DriverCommand =
     | ScenePreviewCommand
     | CollaborationCommand
     | AuthCommand
+    | FilterCommand
     | DriverSubscription;
 
 export type DriverCommandRequest = DistributiveOmit<DriverCommand, "res">;

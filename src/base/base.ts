@@ -17,13 +17,19 @@ export type ClientError = ProtocolError<"bad-argument" | "not-found">;
  */
 export type UnauthorizedError = ProtocolError<"unauthorized">;
 
+export type UnsupportedError = ProtocolError<"unsupported">;
+
+export type ConflictError = ProtocolError<"conflict">;
+
 export type DistributiveOmit<T, K extends string> = T extends any
     ? Omit<T, K>
     : never;
 export type ProtocolCommandError =
     | DrawdyRuntimeError
     | ClientError
-    | UnauthorizedError;
+    | UnauthorizedError
+    | UnsupportedError
+    | ConflictError;
 
 export type ProtocolCommand<T, REQ, RES> = {
     driverId: string;
