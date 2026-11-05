@@ -15,6 +15,7 @@ import {
 import { ScenePreviewCommand } from "../preview";
 import { DriverSubscription } from "../subscription";
 import { StyleableToolId, ToolStyleState } from "../tool-state";
+import { WebcamCommand } from "../webcam";
 
 export type FloatingElementCreateRequest = {
     domId: string;
@@ -348,6 +349,7 @@ export type DriverCommand =
           {
               webviewDomId: string;
               message: unknown;
+              transfer?: Transferable[];
           },
           {
               /**
@@ -456,6 +458,7 @@ export type DriverCommand =
     | ScenePreviewCommand
     | CollaborationCommand
     | AuthCommand
+    | WebcamCommand
     | DriverSubscription;
 
 export type DriverCommandRequest = DistributiveOmit<DriverCommand, "res">;

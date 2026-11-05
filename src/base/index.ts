@@ -11,3 +11,4 @@ export * from "./preview";
 export * from "./styling";
 export * from "./subscription";
 export * from "./tool-state";
+export * from "./webcam";

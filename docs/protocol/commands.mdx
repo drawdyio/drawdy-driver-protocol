@@ -373,12 +373,13 @@ res: { created: boolean }
 req: { webviewDomId: string }
 
 "command:webview:post-message"
-req: { webviewDomId: string; message: unknown }
+req: { webviewDomId: string; message: unknown; transfer?: Transferable[] }
 res: { posted: boolean }
 ```
 
 - When `keepStateWhenClosed` is true, closing the webview only hides it — it stays active and dies with the tab, at the cost of resources. Prefer stateless webviews.
 - `post-message` returns `posted: false` when the webview doesn't exist or isn't connected yet.
+- Objects listed in `transfer` (an `ArrayBuffer`, `ImageBitmap`, `MessagePort` and so on) are moved instead of copied, as with `postMessage`. List only objects that `message` refers to: the webview receives `message` alone. The driver loses them even when `posted` is false.
 - Receive messages from the webview by subscribing to [`subscription:webview:message`](/protocol/subscriptions#webview-events).
 
 ## Storage
@@ -438,6 +439,91 @@ type CollaborationUserPresence = CollaborationUserInfo & {
 `isHost` is true for the board's owner. On a local board the user running the driver is the host.
 
 To follow changes, subscribe to [`subscription:collaboration:presence-changed`](/protocol/subscriptions#collaboration-events).
+
+## Webcam
+
+`command:webcam:start-stream` requires the [`webcam`](/protocol/permissions) permission. `command:webcam:end-stream` requires none.
+
+```ts
+"command:webcam:start-stream"
+req: { constraints?: MediaTrackConstraints }
+res:
+    | { notAvailableReason: "no-camera" | "in-use" }
+    | { port: WebcamFramePort }
+```
+
+```ts
+"command:webcam:end-stream"
+```
+
+```ts
+type WebcamPortMessage = WebcamFrameMessage | WebcamCancelMessage;
+
+type WebcamFrameMessage = {
+    type: "frame";
+    frameData: Uint8Array;
+    init: {
+        format: VideoPixelFormat;
+        codedWidth: number;
+        codedHeight: number;
+        timestamp: number;
+        layout: PlaneLayout[];
+        visibleRect?: DOMRectInit;
+        colorSpace: VideoColorSpaceInit;
+    };
+    metadata: VideoFrameCallbackMetadata;
+};
+
+type WebcamCancelMessage = {
+    type: "cancel";
+};
+```
+
+`start-stream` turns on the camera in Drawdy's page and returns a `MessagePort`. Each frame the camera produces arrives on it as a `WebcamFrameMessage`. `frameData` holds the whole coded frame in its native pixel format, and its buffer is transferred, so the driver owns it. `init` is everything `VideoFrame` needs to rebuild the frame:
+
+```ts
+const res = await issueCommand({
+    driverId,
+    requestId,
+    type: "command:webcam:start-stream",
+    req: {},
+});
+if (res.res.value?.port) {
+    res.res.value.port.onmessage = (ev) => {
+        if (ev.data.type === "cancel") {
+            stopPreview();
+            return;
+        }
+        const frame = new VideoFrame(ev.data.frameData, ev.data.init);
+        drawFrame(frame);
+        frame.close();
+    };
+}
+```
+
+`constraints` is passed to `getUserMedia` as `video`. Without it Drawdy asks for any camera (`video: true`).
+
+When the camera can't be used, the command succeeds with a `notAvailableReason` instead of a port:
+
+- `in-use`: a driver already holds the webcam. Only one driver can hold it at a time, and a driver that already holds it gets `in-use` too until it calls `end-stream`. The user did not refuse anything, so try again later.
+- `no-camera`: no camera matches `constraints`, or there is none at all.
+
+The command fails with an `unauthorized` error when the user denies the `webcam` permission in Drawdy, and also when the browser refuses the camera because the user blocked it there or the page isn't allowed to use it. The driver can't tell the two apart.
+
+To show or process the frames in a webview instead of the driver, hand the port over with `command:webview:post-message`:
+
+```ts
+await issueCommand({
+    driverId,
+    requestId,
+    type: "command:webview:post-message",
+    req: { webviewDomId, message: { type: "webcam", port }, transfer: [port] },
+});
+```
+
+`end-stream` turns the camera off and stops the frames. It does nothing when this driver holds no stream.
+
+The stream can also end at any moment without the driver asking: when the camera track ends (the user revoked the browser permission or unplugged the camera), when the user turns off the driver's `webcam` permission, or when the driver is unloaded. Drawdy doesn't say which. Whatever ends the stream, `end-stream` included, the port receives one `{ type: "cancel" }` as its last message and then nothing more. Handle it wherever the port ends up, which may be a webview, and drop the port there. To use the camera again, call `start-stream` for a new port.
 
 ## Auth
 
