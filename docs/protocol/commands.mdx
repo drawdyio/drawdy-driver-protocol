@@ -384,7 +384,9 @@ res: { posted: boolean }
 
 ## Storage
 
-Two key/value stores scoped to your driver. `kv-storage` holds plain records and requires the [`storage`](/protocol/permissions) permission. `secure-key-store` holds secrets such as API keys, encrypted on the user's Drawdy account, and requires the [`secure-key-store`](/protocol/permissions) permission. Each secure value is a string of at most 1 KB in UTF-8, and the user must be signed in.
+Two key/value stores scoped to your driver. `kv-storage` holds plain records on the user's device and requires the [`storage`](/protocol/permissions) permission. `secure-key-store` holds secrets such as API keys and requires the [`secure-key-store`](/protocol/permissions) permission.
+
+Values in `secure-key-store` are saved to the signed-in user's Drawdy account and encrypted at rest with AES-256-GCM. Each value is scoped to the user and your `driverId`, so no other driver can read it. Drawdy's servers hold the encryption key and decrypt a value when your driver reads it, so this is encryption at rest, not end-to-end encryption. The user can also view, change and delete the keys your driver saved from the Keys tab in Drawdy's extensions dialog. Each value is a string of at most 1 KB in UTF-8. The commands fail with a `runtime` error when the user is signed out.
 
 ```ts
 "command:kv-storage:set"
