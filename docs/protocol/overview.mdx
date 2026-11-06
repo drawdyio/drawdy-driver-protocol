@@ -7,15 +7,47 @@ The Drawdy Driver Protocol is the message envelope, the driver module contract, 
 
 ## Where your driver runs
 
-![The driver process](/protocol/driver-process.png)
+```mermaid
+flowchart LR
+    subgraph main["Drawdy main thread"]
+        scene["Scene"]
+        hosts["Driver hosts"]
+    end
+    subgraph a["Sandboxed iframe"]
+        workerA["Worker: driver A"]
+    end
+    subgraph b["Sandboxed iframe"]
+        workerB["Worker: driver B"]
+    end
+    hosts <-->|commands and subscriptions| workerA
+    hosts <-->|commands and subscriptions| workerB
+    workerA -.->|command:webview:create| webviewA["Webview A: sandboxed iframe"]
+```
 
-Drawdy keeps the canvas on the main thread and runs drivers off it. The main thread holds the **scene** and a thin **driver host**; every driver runs inside a single shared **worker thread** (`host-worker`). Your `activate` and `onEvent` execute there. This is deliberate: a driver doing real work never blocks a frame, so the canvas stays smooth no matter what an extension is doing. The host and the worker talk only through the protocol envelope — the [commands](/protocol/commands) and [subscriptions](/protocol/subscriptions) in this reference are the entire surface between them.
+Drawdy keeps the canvas on the main thread and runs drivers off it. Each driver gets its own **worker thread**, started inside its own sandboxed `iframe`. Your `activate` and `onEvent` execute there. A driver doing real work never blocks a frame, so the canvas stays smooth no matter what an extension is doing. Drawdy and the worker talk only through the protocol envelope: the [commands](/protocol/commands) and [subscriptions](/protocol/subscriptions) in this reference are the entire surface between them.
 
-All drivers share that one worker. `Driver1`, `Driver2`, `Driver3`… sit side by side in the same context. When you need a hard boundary — third-party HTML, untrusted markup, a heavy embedded UI — spawn a [webview](/protocol/webview-api). Webviews run in an `iframe` on a separate origin and their own process, so they get real origin and process isolation from your driver and from each other.
+Drivers are isolated from one another:
+
+- **Separate globals.** Each worker has its own global scope, so a driver cannot read or patch another driver's variables, prototypes, `fetch`, or messages.
+- **Separate threads.** A driver stuck in a long loop delays only itself. Other drivers keep running.
+- **Identity comes from the channel.** Drawdy knows which driver sent a command by the worker it came from, not by the message's `driverId` field. A command that names another driver's id still runs as the driver that sent it.
+
+### Webviews
+
+A [webview](/protocol/webview-api) is a separate sandboxed `iframe` with an opaque origin. It cannot reach Drawdy's DOM or storage, your driver's worker, or another extension's webview. Use one for custom UI or third-party HTML.
+
+A webview's scripts do not get their own thread:
+
+| Browser          | Where webview scripts run                                                      |
+| ---------------- | ------------------------------------------------------------------------------ |
+| Chrome           | A process separate from Drawdy, shared by all sandboxed iframes on the page     |
+| Firefox, Safari  | Drawdy's main thread                                                            |
+
+So in Firefox and Safari, a webview busy for a second freezes the canvas for a second. Keep heavy work out of the webview's main thread: do it in the driver, or in a worker the webview starts. For rendering, move the canvas to that worker with `canvas.transferControlToOffscreen()` and forward input events to it.
 
 ### The trust model
 
-Drivers are **not** sandboxed from one another inside the worker. They share a thread, so in principle one driver can observe or interfere with another. **Every driver is reviewed before it can be published**. But the best line of defence here is you. You install drivers the way you trust any extension — from a source that vouches for them. It's a trust model, not a sandbox. The shared worker is what keeps drivers fast, lets them cooperate on the same scene, and keeps the protocol small. Reach for a webview whenever you want custom ui, or an isolation on top of that trust.
+Isolation stops extensions from reading or interfering with each other. It does not limit what a driver does with the [permissions](/protocol/permissions) the user grants it: a driver with `scene` can edit the board, whatever its intent. **Every driver is reviewed before it can be published**, and the user installs extensions from sources they trust. Review and permissions decide what a driver may do; isolation keeps one driver's code away from another's.
 
 ## The envelope
 
