@@ -384,7 +384,7 @@ res: { posted: boolean }
 
 ## Storage
 
-A key/value store scoped to your driver. `kv-storage` requires the [`storage`](/protocol/permissions) permission.
+Two key/value stores scoped to your driver. `kv-storage` holds plain records and requires the [`storage`](/protocol/permissions) permission. `secure-key-store` holds secrets such as API keys, encrypted on the user's Drawdy account, and requires the [`secure-key-store`](/protocol/permissions) permission. Each secure value is a string of at most 1 KB in UTF-8, and the user must be signed in.
 
 ```ts
 "command:kv-storage:set"
@@ -395,6 +395,17 @@ req: { key: string }
 res: { got?: Record<string, unknown> }
 
 "command:kv-storage:delete"
+req: { key: string }
+res: { deleted: boolean }
+
+"command:secure-key-store:set"
+req: { key: string; value: string }
+
+"command:secure-key-store:get"
+req: { key: string }
+res: { got?: string }
+
+"command:secure-key-store:delete"
 req: { key: string }
 res: { deleted: boolean }
 ```

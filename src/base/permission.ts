@@ -4,6 +4,7 @@ export type ProtocolPermission =
     | "dom"
     | "scene"
     | "storage"
+    | "secure-key-store"
     | "collaboration"
     | "webcam";
 type ExactMatch<
@@ -69,6 +70,10 @@ export type ProtocolPermissionMap = ExactMatch<{
     "command:kv-storage:set": "storage";
     "command:kv-storage:get": "storage";
     "command:kv-storage:delete": "storage";
+
+    "command:secure-key-store:set": "secure-key-store";
+    "command:secure-key-store:get": "secure-key-store";
+    "command:secure-key-store:delete": "secure-key-store";
 
     "command:subscription:remove": "none";
 

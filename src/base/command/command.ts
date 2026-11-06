@@ -431,6 +431,28 @@ export type DriverCommand =
               deleted: boolean;
           }
       >
+    | ProtocolCommand<
+          "command:secure-key-store:set",
+          {
+              key: string;
+              value: string;
+          },
+          undefined
+      >
+    | ProtocolCommand<
+          "command:secure-key-store:get",
+          { key: string },
+          {
+              got?: string;
+          }
+      >
+    | ProtocolCommand<
+          "command:secure-key-store:delete",
+          { key: string },
+          {
+              deleted: boolean;
+          }
+      >
     | ProtocolCommand<"command:history:undo", undefined, undefined>
     | ProtocolCommand<"command:history:redo", undefined, undefined>
     | ProtocolCommand<

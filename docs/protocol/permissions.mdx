@@ -10,6 +10,7 @@ type ProtocolPermission =
     | "dom"
     | "scene"
     | "storage"
+    | "secure-key-store"
     | "collaboration"
     | "webcam";
 ```
@@ -32,13 +33,14 @@ A command whose permission is not declared fails immediately with an [`unauthori
 
 ## What each permission grants
 
-| Permission      | Grants                                                                                                             | Covers                                                                                                                                                                                      |
-| --------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dom`           | Drawdy's UI surface around the canvas.                                                                             | Action buttons, floating elements, window size and fullscreen, webviews, context menus, and their events, including `subscription:keyboard:control-keys`.                                   |
-| `scene`         | The user's content and the tools that edit it.                                                                     | Every `command:scene:*` command (elements, images, previews, text editing, screenshots, selection), every `command:tools:*` command, undo and redo, and every `subscription:scene:*` topic. |
-| `storage`       | The driver's plain key/value store on this device.                                                                 | `command:kv-storage:*`.                                                                                                                                                                     |
-| `collaboration` | The names, avatars, colors and cursor positions of the people on the board, including the user running the driver. | `command:collaboration:get-all-users-in-board` and `subscription:collaboration:presence-changed`.                                                                                           |
-| `webcam`        | Frames from the user's webcam.                                                                                     | `command:webcam:start-stream`.                                                                                                                                                              |
+| Permission         | Grants                                                                                                             | Covers                                                                                                                                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dom`              | Drawdy's UI surface around the canvas.                                                                             | Action buttons, floating elements, window size and fullscreen, webviews, context menus, and their events, including `subscription:keyboard:control-keys`.                                   |
+| `scene`            | The user's content and the tools that edit it.                                                                     | Every `command:scene:*` command (elements, images, previews, text editing, screenshots, selection), every `command:tools:*` command, undo and redo, and every `subscription:scene:*` topic. |
+| `storage`          | The driver's plain key/value store on this device.                                                                 | `command:kv-storage:*`.                                                                                                                                                                     |
+| `secure-key-store` | The driver's encrypted key store on the user's account, for secrets such as API keys.                              | `command:secure-key-store:*`.                                                                                                                                                               |
+| `collaboration`    | The names, avatars, colors and cursor positions of the people on the board, including the user running the driver. | `command:collaboration:get-all-users-in-board` and `subscription:collaboration:presence-changed`.                                                                                           |
+| `webcam`           | Frames from the user's webcam.                                                                                     | `command:webcam:start-stream`.                                                                                                                                                              |
 
 Reading and moving the camera, the camera-moved events, `command:auth:check-logged-in`, `command:subscription:remove` and `command:webcam:end-stream` need no permission and always run.
 
@@ -91,5 +93,6 @@ import type { ProtocolPermissionMap } from "@drawdy/driver-protocol";
 
 type AddElementsPermission =
     ProtocolPermissionMap["command:scene:add-drawdy-elements"]; // "scene"
-type GetInfoPermission = ProtocolPermissionMap["command:camera:get-info"]; // "none"
+type GetInfoPermission =
+    ProtocolPermissionMap["command:camera:get-info"]; // "none"
 ```
