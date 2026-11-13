@@ -109,6 +109,7 @@ export type ProtocolPermissionMap = ExactMatch<{
     "subscription:collaboration:presence-changed": "collaboration";
 
     "command:auth:check-logged-in": "none";
+    "command:auth:check-can-edit": "none";
 
     "command:webcam:start-stream": "webcam";
     "command:webcam:end-stream": "none";
