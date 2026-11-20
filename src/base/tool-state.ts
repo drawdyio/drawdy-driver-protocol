@@ -55,7 +55,17 @@ export type ToolId =
     | "circle"
     | "diamond"
     | "image"
-    | "laser-pointer";
+    | "laser-pointer"
+    | "sticky-note"
+    | "frame"
+    | "comment";
+
+export type ActiveToolName = ToolId | "custom" | (string & {});
+
+export type CustomToolIcon = {
+    type: "img" | "svg";
+    value: string;
+};
 
 type AssertStyleableAreTools = ToolStyleState["toolId"] extends ToolId
     ? true

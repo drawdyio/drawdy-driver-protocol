@@ -230,10 +230,24 @@ The commands in this section require the [`scene`](/protocol/permissions) permis
 
 ```ts
 "command:tools:get-active"
-res: { toolId: string | null }
+res: { toolId: ActiveToolName | null }
 
 "command:tools:set-active"
-req: { toolId: string }
+req: { toolId: ActiveToolName }
+
+"command:tools:register-custom-tool"
+req: {
+    name: string;
+    toolbarIcon: CustomToolIcon;
+    cursorIcon?: CustomToolIcon;
+}
+res:
+    | { created: true }
+    | { created: false; errorReason: "tool-name-collision" }
+
+"command:tools:remove-custom-tool"
+req: { name: string }
+res: { removed: boolean }
 
 "command:tools:update-settings"
 req: {
@@ -257,6 +271,12 @@ req: {
 ```
 
 See [`ToolId`](/protocol/data-types#toolstylestate), [`StyleableToolId`](/protocol/data-types#toolstylestate), and [`ToolStyleState`](/protocol/data-types#toolstylestate).
+
+`register-custom-tool` adds a tool to the toolbar's overflow menu. The tool does nothing on its own: while it is active, follow the pointer with [`subscription:scene:pointer`](/protocol/subscriptions#scene-events) and act on the canvas yourself. `cursorIcon` replaces the canvas cursor while the tool is active; without it the cursor is the default arrow. An `svg` icon's `value` is SVG markup and an `img` icon's `value` is an image URL.
+
+`name` is scoped to your extension, so two extensions can each register `cut`. Registration fails with `tool-name-collision` when the name is a built-in [`ToolId`](/protocol/data-types#toolstylestate), is `"custom"`, or is already one of your own tools.
+
+`get-active` and `set-active` use your tool's `name`. When another extension's tool is active, `get-active` returns `"custom"`, and `set-active` cannot activate another extension's tool. `remove-custom-tool` returns `removed: false` when you have no tool with that name; if the tool is active, the canvas switches to `select` first. Your tools are removed when your extension is removed.
 
 ## Context menus
 

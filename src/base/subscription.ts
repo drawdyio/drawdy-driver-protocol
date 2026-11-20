@@ -5,6 +5,7 @@ import {
     SubscribedDrawdyElement,
 } from "./drawdy-element-schema/common";
 import { ModuleStyling } from "./styling";
+import { ActiveToolName } from "./tool-state";
 
 /**
  * The drawdy element properties to include in the subscription's events.
@@ -124,6 +125,7 @@ export type DriverSubscription =
           undefined
       >
     | ProtocolSubscription<"subscription:tool:laser", undefined>
+    | ProtocolSubscription<"subscription:tool:change", undefined>
     | ProtocolSubscription<
           "subscription:collaboration:presence-changed",
           undefined
@@ -341,6 +343,12 @@ export type DriverSubscriptionEvent =
           {
               type: "laser-state-update";
               lasers: LaserStroke[];
+          }
+      >
+    | ProtocolSubscriptionEvent<
+          "subscription:tool:change",
+          {
+              name: ActiveToolName;
           }
       >
     | ProtocolSubscriptionEvent<

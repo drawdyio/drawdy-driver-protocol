@@ -14,7 +14,12 @@ import {
 } from "../drawdy-element-schema/common";
 import { ScenePreviewCommand } from "../preview";
 import { DriverSubscription } from "../subscription";
-import { StyleableToolId, ToolStyleState } from "../tool-state";
+import {
+    ActiveToolName,
+    CustomToolIcon,
+    StyleableToolId,
+    ToolStyleState,
+} from "../tool-state";
 import { WebcamCommand } from "../webcam";
 
 export type FloatingElementCreateRequest = {
@@ -362,15 +367,30 @@ export type DriverCommand =
           "command:tools:get-active",
           undefined,
           {
-              toolId: string | null;
+              toolId: ActiveToolName | null;
           }
       >
     | ProtocolCommand<
           "command:tools:set-active",
           {
-              toolId: string;
+              toolId: ActiveToolName;
           },
           undefined
+      >
+    | ProtocolCommand<
+          "command:tools:register-custom-tool",
+          {
+              name: string;
+              toolbarIcon: CustomToolIcon;
+              cursorIcon?: CustomToolIcon;
+          },
+          | { created: true; errorReason?: never }
+          | { created: false; errorReason: "tool-name-collision" }
+      >
+    | ProtocolCommand<
+          "command:tools:remove-custom-tool",
+          { name: string },
+          { removed: boolean }
       >
     | ProtocolCommand<
           "command:tools:update-settings",

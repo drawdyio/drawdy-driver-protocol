@@ -41,6 +41,8 @@ export type ProtocolPermissionMap = ExactMatch<{
     "command:tools:set-active": "scene";
     "command:tools:update-settings": "scene";
     "command:tools:emulate-pointer": "scene";
+    "command:tools:register-custom-tool": "scene";
+    "command:tools:remove-custom-tool": "scene";
 
     "command:history:undo": "scene";
     "command:history:redo": "scene";
@@ -104,6 +106,7 @@ export type ProtocolPermissionMap = ExactMatch<{
     "subscription:scene:drawdy-elements-dragged": "scene";
 
     "subscription:tool:laser": "scene";
+    "subscription:tool:change": "scene";
 
     "command:collaboration:get-all-users-in-board": "collaboration";
     "subscription:collaboration:presence-changed": "collaboration";

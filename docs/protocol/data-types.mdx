@@ -512,10 +512,20 @@ type ToolId =
     | "circle"
     | "diamond"
     | "image"
-    | "laser-pointer";
+    | "laser-pointer"
+    | "sticky-note"
+    | "frame"
+    | "comment";
+
+type ActiveToolName = ToolId | "custom" | (string & {});
+
+type CustomToolIcon = {
+    type: "img" | "svg";
+    value: string;
+};
 ```
 
-`StyleableToolId` is the subset of `ToolId` that `ToolStyleState` covers.
+`StyleableToolId` is the subset of `ToolId` that `ToolStyleState` covers. `ActiveToolName` is a `ToolId`, one of your own custom tool names, or `"custom"` for another extension's tool.
 
 ## PreviewTransform
 
