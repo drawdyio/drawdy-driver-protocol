@@ -49,6 +49,7 @@ export type ProtocolPermissionMap = ExactMatch<{
 
     "command:scene:add-drawdy-elements": "scene";
     "command:scene:remove-drawdy-elements": "scene";
+    "command:scene:duplicate-drawdy-elements": "scene";
     "command:scene:update-drawdy-elements": "scene";
     "command:scene:get-drawdy-elements": "scene";
     "command:scene:get-image-source": "scene";

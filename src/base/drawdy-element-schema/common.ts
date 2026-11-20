@@ -31,6 +31,8 @@ export type SubscribeableProperties = ElementStyle & {
     frameName: string;
     startBinding: LineBinding;
     endBinding: LineBinding;
+    crop: ImageCrop;
+    textLines: TextLine[];
 } & (
         | {
               type: Exclude<SceneElementType, "path">;
@@ -84,6 +86,14 @@ export type ImageCrop = {
 
 export type ImageCropShape = "rectangle" | "circle";
 
+export type TextLine = {
+    text: string;
+    start: number;
+    end: number;
+    y: number;
+    height: number;
+};
+
 export type UpdateableProperties = ElementStyle &
     Partial<{
         meta: Record<string, unknown>;
@@ -92,6 +102,7 @@ export type UpdateableProperties = ElementStyle &
         frameId: string | null;
         localAnimation: LocalAnimation | null;
         frameName: string;
+        text: string;
         crop: ImageCrop | null;
         cropShape: ImageCropShape;
         width: number;

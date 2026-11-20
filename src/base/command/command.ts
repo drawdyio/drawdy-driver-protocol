@@ -238,6 +238,18 @@ export type DriverCommand =
           { blob: Blob }
       >
     | ProtocolCommand<
+          "command:scene:duplicate-drawdy-elements",
+          {
+              duplicates: {
+                  drawdyElementId: string;
+                  properties?: UpdateableProperties;
+              }[];
+          },
+          {
+              newDrawdyElementIds: Record<string, string>;
+          }
+      >
+    | ProtocolCommand<
           "command:scene:remove-drawdy-elements",
           {
               drawdyElementIds: string[];

@@ -70,6 +70,15 @@ res: { added: boolean }
 req: { drawdyElementIds: string[] }
 res: { removed: number }
 
+"command:scene:duplicate-drawdy-elements"
+req: {
+    duplicates: {
+        drawdyElementId: string;
+        properties?: UpdateableProperties;
+    }[];
+}
+res: { newDrawdyElementIds: Record<string, string> }
+
 "command:scene:update-drawdy-elements"
 req: {
     updates: {
@@ -118,6 +127,7 @@ res: { png: Blob }
 
 - `line` and `arrow` elements can bind either end to another element instead of a fixed point — see [`LineBinding`](/protocol/data-types#drawdyelementschema). Bindings resolve against elements already on the canvas and ones created earlier in the same `add-drawdy-elements` batch, so add the targets before the connector.
 - `add-drawdy-elements` is all or nothing on ids: if any `drawdyElementId` in the batch already exists on the canvas, nothing is added and the command fails with `bad-argument`, listing the taken ids in `body.existingIds`. The user sees an error toast.
+- `duplicate-drawdy-elements` copies each element in place, the same as duplicating it in the editor without the offset: the copy keeps the original's style, text, crop, group, frame and layer, and an image copy shows the same file without uploading it again. `properties` is applied to the copy before it is added, with the same rules as [`update-drawdy-elements`](#scene-elements), so a copy can be moved, resized, cropped or relabelled in the same command. `newDrawdyElementIds` maps each copied element's id to its copy's id. Ids that don't exist are skipped and left out of the map, and comments cannot be copied. A frame is copied without its children. Each id may appear once per command; a repeated id, or properties that `update-drawdy-elements` would reject, fail the command with `bad-argument` and nothing is copied.
 - When updating, `meta` is **merged** into the element's existing meta; `transform` moves the element to an absolute `x`/`y`; `width`/`height` resize its bounding rect; every other property is set as given. See [`UpdateableProperties`](/protocol/data-types#element-properties).
 - Elements that share a `groupId` form a group: the user selects, moves, resizes and rotates them as one. Set it on creation or later with `update-drawdy-elements` (`null` ungroups). Grouped elements are rejected by [`begin-preview`](#scene-preview-transforms).
 - A frame's name is its `name` on creation, `frameName` when you read it back, and `frameName` again when you rename it with `update-drawdy-elements`. Renaming only applies to frames; on any other element the command fails with `bad-argument`.

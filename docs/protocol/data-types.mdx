@@ -287,6 +287,8 @@ type SubscribeableProperties = ElementStyle & {
     frameName: string;
     startBinding: LineBinding;
     endBinding: LineBinding;
+    crop: ImageCrop;
+    textLines: TextLine[];
 } & (
         | {
               type: Exclude<SceneElementType, "path">;
@@ -300,6 +302,14 @@ type SubscribeableProperties = ElementStyle & {
 
 type ShapeComponentType = "rect" | "circle" | "diamond" | "sticky-note";
 
+type TextLine = {
+    text: string;
+    start: number;
+    end: number;
+    y: number;
+    height: number;
+};
+
 type SubscribeableKey = keyof SubscribeableProperties;
 
 type DrawdyElement = { id: string };
@@ -312,7 +322,7 @@ type SubscribedDrawdyElement = DrawdyElement & Partial<SubscribeableProperties>;
 
 Because the type is a union on `type`, checking `type === "path"` narrows `componentType` to `ShapeComponentType`. Every property is still optional in a `SubscribedDrawdyElement`, so request both `type` and `componentType` if you need to branch on the shape.
 
-When you query or subscribe you pass a list of `SubscribeableKey`; each returned `SubscribedDrawdyElement` carries `id` plus exactly the properties you asked for. Style fields are only present when the element has them set, `groupId` only when the element belongs to a group, and `frameId` only when it belongs to a frame. `frameName` is present only on frames; a frame with no stored name reads back as `Frame`. `startBinding`/`endBinding` are present only on lines and arrows whose end is bound to another element — request them to discover which elements a connector links. The package is type-only, so to request every style field build the key list yourself — a `Record<keyof ElementStyle, 0>` literal checked with `satisfies` gives you a compile-time-complete list to `Object.keys`.
+When you query or subscribe you pass a list of `SubscribeableKey`; each returned `SubscribedDrawdyElement` carries `id` plus exactly the properties you asked for. Style fields are only present when the element has them set, `groupId` only when the element belongs to a group, and `frameId` only when it belongs to a frame. `frameName` is present only on frames; a frame with no stored name reads back as `Frame`. `startBinding`/`endBinding` are present only on lines and arrows whose end is bound to another element — request them to discover which elements a connector links. `crop` is present only on cropped images, as the same fractions of the uncropped image that [`crop`](#element-properties) takes in an update; an image without it shows the whole file. `textLines` is present only on text elements and lists the lines as Drawdy paints them, after wrapping to the text's width: `text` is the line's characters, `start` and `end` are its offsets into the element's `text` (so `text.slice(start, end)` is the line, and a wrap drops the space it breaks at), and `y` and `height` are the line's top and height in canvas coordinates. Lines wrap from the plain `text`, so text with mixed bold or italic runs can wrap slightly differently from what is painted. The package is type-only, so to request every style field build the key list yourself — a `Record<keyof ElementStyle, 0>` literal checked with `satisfies` gives you a compile-time-complete list to `Object.keys`.
 
 Updates are a partial patch:
 
@@ -325,6 +335,7 @@ type UpdateableProperties = ElementStyle &
         frameId: string | null;
         localAnimation: LocalAnimation | null;
         frameName: string;
+        text: string;
         crop: ImageCrop | null;
         cropShape: ImageCropShape;
         width: number;
@@ -341,6 +352,8 @@ type ImageCropShape = "rectangle" | "circle";
 ```
 
 `meta` merges into existing meta. Style fields are set as given, so a driver can restyle existing elements (recolor, change stroke width, switch `fillStyle`) with `command:scene:update-drawdy-elements`. `localAnimation` attaches (or, when `null`, clears) a declarative animation on the element. `groupId` joins the element to a group — any string unique within the board, or an existing group's id to join it — and `null` ungroups it. `frameId` moves the element into the frame with that id, and `null` takes it out of its frame. `frameName` renames a frame; an empty string names it `Frame`, the same as clearing the name in the editor. Setting it on anything other than a frame fails the command with `bad-argument`. `transform` moves the element so the top-left of its bounding rect lands on `x`/`y`, the same values you read back as `x` and `y`; give only one to move along that axis. Only the element itself moves: a frame's children stay where they are, so move them in the same update. Values must be finite, or the command fails with `bad-argument`.
+
+`text` replaces the element's text: the content of a text element, or the label of a shape, line or arrow. Formatting such as bold, italic or links is cleared, since it belongs to the old text. A text element's box reflows to the new text; send `height` in the same update to shrink a text box that was taller than its text. Setting it on an element that cannot hold text, such as an image or a frame, fails the command with `bad-argument`.
 
 `width` and `height` resize the element so its bounding rect reads back with that size. The top-left stays where it is, or moves to `transform`'s `x`/`y` when you send both in the same update. Give only one to resize along that axis. How the element changes depends on its type:
 
