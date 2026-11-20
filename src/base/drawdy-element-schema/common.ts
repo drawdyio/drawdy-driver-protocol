@@ -77,6 +77,13 @@ export type LocalAnimation = {
     };
 };
 
+export type ImageCrop = {
+    topLeft: [number, number];
+    bottomRight: [number, number];
+};
+
+export type ImageCropShape = "rectangle" | "circle";
+
 export type UpdateableProperties = ElementStyle &
     Partial<{
         meta: Record<string, unknown>;
@@ -85,6 +92,8 @@ export type UpdateableProperties = ElementStyle &
         frameId: string | null;
         localAnimation: LocalAnimation | null;
         frameName: string;
+        crop: ImageCrop | null;
+        cropShape: ImageCropShape;
         width: number;
         height: number;
         transform: Partial<{
