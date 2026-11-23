@@ -42,7 +42,7 @@ A command whose permission is not declared fails immediately with an [`unauthori
 | `collaboration`    | The names, avatars, colors and cursor positions of the people on the board, including the user running the driver. | `command:collaboration:get-all-users-in-board` and `subscription:collaboration:presence-changed`.                                                                                           |
 | `webcam`           | Frames from the user's webcam.                                                                                     | `command:webcam:start-stream`.                                                                                                                                                              |
 
-Reading and moving the camera, the camera-moved events, `command:auth:check-logged-in`, `command:subscription:remove` and `command:webcam:end-stream` need no permission and always run.
+Reading and moving the camera, the camera-moved events, `command:auth:check-logged-in`, `command:auth:check-can-edit`, `command:subscription:remove` and `command:webcam:end-stream` need no permission and always run.
 
 Each section of [Commands](/protocol/commands) and [Subscriptions](/protocol/subscriptions) names the permission its entries need.
 
