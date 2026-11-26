@@ -13,10 +13,10 @@ flowchart LR
         scene["Scene"]
         hosts["Driver hosts"]
     end
-    subgraph a["Sandboxed iframe"]
+    subgraph a["Hidden iframe for driver A (opaque origin)"]
         workerA["Worker: driver A"]
     end
-    subgraph b["Sandboxed iframe"]
+    subgraph b["Hidden iframe for driver B (opaque origin)"]
         workerB["Worker: driver B"]
     end
     hosts <-->|commands and subscriptions| workerA
@@ -24,7 +24,22 @@ flowchart LR
     workerA -.->|command:webview:create| webviewA["Webview A: sandboxed iframe"]
 ```
 
-Drawdy keeps the canvas on the main thread and runs drivers off it. Each driver gets its own **worker thread**, started inside its own sandboxed `iframe`. Your `activate` and `onEvent` execute there. A driver doing real work never blocks a frame, so the canvas stays smooth no matter what an extension is doing. Drawdy and the worker talk only through the protocol envelope: the [commands](/protocol/commands) and [subscriptions](/protocol/subscriptions) in this reference are the entire surface between them.
+Drawdy keeps the canvas on the main thread and runs drivers off it. Each driver gets its own **worker thread**, and Drawdy starts that worker from a hidden `iframe` created for that driver alone:
+
+1. When Drawdy loads your driver, it adds an `iframe` to the page with `sandbox="allow-scripts"` and nothing else. Without `allow-same-origin`, the document inside gets an **opaque origin**: `self.origin` is `"null"`, and it shares no origin with Drawdy or with any other driver.
+2. That iframe starts one worker. A worker takes its origin from the document that created it, so your worker has the same opaque origin.
+3. The worker runs your bundle. Your `activate` and `onEvent` execute there.
+
+The iframe exists only while your driver is loaded. Drawdy removes it, and the worker with it, when the extension is uninstalled, when the user switches or leaves the board, and when the page reloads. The next load creates a new iframe and worker and calls `activate` again, so nothing in the worker's memory carries over between loads.
+
+A driver doing real work never blocks a frame, so the canvas stays smooth no matter what an extension is doing. Drawdy and the worker talk only through the protocol envelope: the [commands](/protocol/commands) and [subscriptions](/protocol/subscriptions) in this reference are the entire surface between them.
+
+### What the opaque origin means for your code
+
+- **No browser storage.** IndexedDB and the Cache API are not available in an opaque origin. Keep data that must outlive a load in [`kv-storage`](/protocol/commands#storage) or `secure-key-store`. Large downloads, such as ML models, have to be fetched again on each load.
+- **Cross-origin `fetch` only.** Every request leaves with `Origin: null`, so it succeeds only against servers that answer with `Access-Control-Allow-Origin: *`. Requests carry no Drawdy cookies or session, so a driver cannot call Drawdy's API as the user.
+- **No access to Drawdy's `blob:` URLs.** They belong to Drawdy's origin. Read image pixels with [`command:scene:get-image-source`](/protocol/commands#scene-images) instead.
+- **Classic worker.** The worker is not a module worker, so `importScripts(url)` works for loading a runtime such as a WebAssembly library from a CDN that allows CORS.
 
 Drivers are isolated from one another:
 
